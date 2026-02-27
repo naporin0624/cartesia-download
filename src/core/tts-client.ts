@@ -1,5 +1,5 @@
 import { ResultAsync } from 'neverthrow';
-import type { AudioFormat, ResolvedConfig, TtsClient, TtsResult, CartesiaDownloadError } from '../types.js';
+import type { AudioFormat, ResolvedConfig, TtsClient, TtsResult, TtsError } from '../types.js';
 
 type WavOutputFormat = {
   container: 'wav';
@@ -46,7 +46,7 @@ const asyncIterableToBuffer = async (iterable: AsyncIterable<Uint8Array>): Promi
 };
 
 export const createCartesiaTtsClient = (client: CartesiaLikeClient): TtsClient => ({
-  generate(config: ResolvedConfig): ResultAsync<TtsResult, CartesiaDownloadError> {
+  generate(config: ResolvedConfig): ResultAsync<TtsResult, TtsError> {
     return ResultAsync.fromPromise(
       (async () => {
         const outputFormat = buildOutputFormat(config.format, config.sampleRate);
@@ -69,7 +69,7 @@ export const createCartesiaTtsClient = (client: CartesiaLikeClient): TtsClient =
           format: config.format,
         };
       })(),
-      (cause): CartesiaDownloadError => ({ type: 'TtsApiError', cause }),
+      (cause): TtsError => ({ type: 'TtsApiError', cause }),
     );
   },
 });

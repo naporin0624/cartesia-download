@@ -1,12 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { RawCliArgs, RcConfig } from '../types.js';
-
-vi.mock('node:fs/promises');
-
-import { parseFormat, resolveConfig, readRcFile, readTextFile } from './config.js';
-import fs from 'node:fs/promises';
-
-const mockedFs = vi.mocked(fs);
+import { parseFormat, resolveConfig } from './config.js';
 
 describe('parseFormat', () => {
   it('returns "wav" for "wav"', () => {
@@ -248,61 +242,5 @@ describe('resolveConfig', () => {
     const result = resolveConfig(args, env, rc);
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().outputPath).toBe('/tmp/rc-output.wav');
-  });
-});
-
-describe('readRcFile', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it('returns parsed config from existing file', async () => {
-    const rcContent: RcConfig = {
-      apiKey: 'test-key',
-      voiceId: 'test-voice',
-      model: 'sonic-2',
-    };
-    mockedFs.readFile.mockResolvedValue(JSON.stringify(rcContent));
-
-    const result = await readRcFile('/path/to/.cartesiarc.json');
-    expect(result).toEqual(rcContent);
-    expect(mockedFs.readFile).toHaveBeenCalledWith('/path/to/.cartesiarc.json', 'utf-8');
-  });
-
-  it('returns empty object when file does not exist', async () => {
-    const error = new Error('ENOENT') as NodeJS.ErrnoException;
-    error.code = 'ENOENT';
-    mockedFs.readFile.mockRejectedValue(error);
-
-    const result = await readRcFile('/path/to/.cartesiarc.json');
-    expect(result).toEqual({});
-  });
-});
-
-describe('readTextFile', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  it('returns file content for existing file', async () => {
-    mockedFs.readFile.mockResolvedValue('Hello, this is the text content.');
-
-    const result = await readTextFile('/path/to/input.txt');
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe('Hello, this is the text content.');
-    expect(mockedFs.readFile).toHaveBeenCalledWith('/path/to/input.txt', 'utf-8');
-  });
-
-  it('returns FileReadError when file does not exist', async () => {
-    const cause = new Error('ENOENT');
-    mockedFs.readFile.mockRejectedValue(cause);
-
-    const result = await readTextFile('/path/to/missing.txt');
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toEqual({
-      type: 'FileReadError',
-      path: '/path/to/missing.txt',
-      cause,
-    });
   });
 });

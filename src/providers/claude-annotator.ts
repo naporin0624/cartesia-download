@@ -1,7 +1,7 @@
 import { generateText } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { ResultAsync } from 'neverthrow';
-import type { TextAnnotator, CartesiaDownloadError } from '../types.js';
+import type { TextAnnotator, AnnotationError } from '../types.js';
 
 const SYSTEM_PROMPT = `You are a speech emotion annotator for the Cartesia TTS engine.
 
@@ -34,7 +34,7 @@ type ClaudeAnnotatorOptions = {
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 
 export const createClaudeAnnotator = (options?: ClaudeAnnotatorOptions): TextAnnotator => ({
-  annotate(text: string): ResultAsync<string, CartesiaDownloadError> {
+  annotate(text: string): ResultAsync<string, AnnotationError> {
     return ResultAsync.fromPromise(
       (async () => {
         const anthropic = createAnthropic(options?.apiKey ? { apiKey: options.apiKey } : {});
@@ -45,7 +45,7 @@ export const createClaudeAnnotator = (options?: ClaudeAnnotatorOptions): TextAnn
         });
         return annotatedText || text;
       })(),
-      (cause): CartesiaDownloadError => ({ type: 'AnnotationError', cause }),
+      (cause): AnnotationError => ({ type: 'AnnotationError', cause }),
     );
   },
 });
