@@ -7,7 +7,7 @@ import type {
   ResolvedConfig,
 } from '../types.js'
 
-export function parseFormat(value: string): AudioFormat | CartesiaDownloadError {
+export const parseFormat = (value: string): AudioFormat | CartesiaDownloadError => {
   const lower = value.toLowerCase()
   if (lower === 'wav' || lower === 'mp3') {
     return lower
@@ -15,11 +15,11 @@ export function parseFormat(value: string): AudioFormat | CartesiaDownloadError 
   return { type: 'InvalidFormat', value }
 }
 
-export function resolveConfig(
+export const resolveConfig = (
   args: RawCliArgs,
   env: Record<string, string | undefined>,
   rc: RcConfig,
-): ResolvedConfig | CartesiaDownloadError {
+): ResolvedConfig | CartesiaDownloadError => {
   // Resolve apiKey: env > rc (no CLI arg for apiKey)
   const apiKey = env['CARTESIA_API_KEY'] ?? rc.apiKey
   if (!apiKey) {
@@ -68,7 +68,7 @@ export function resolveConfig(
   }
 }
 
-export async function readRcFile(path: string): Promise<RcConfig> {
+export const readRcFile = async (path: string): Promise<RcConfig> => {
   try {
     const content = await fs.readFile(path, 'utf-8')
     return JSON.parse(content) as RcConfig
@@ -77,7 +77,7 @@ export async function readRcFile(path: string): Promise<RcConfig> {
   }
 }
 
-export async function readTextFile(path: string): Promise<string | CartesiaDownloadError> {
+export const readTextFile = async (path: string): Promise<string | CartesiaDownloadError> => {
   try {
     return await fs.readFile(path, 'utf-8')
   } catch (cause) {

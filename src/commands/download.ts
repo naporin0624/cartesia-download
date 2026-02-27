@@ -6,11 +6,11 @@ import { createFileOutput } from '../core/output.js'
 import { CartesiaClient } from '@cartesia/cartesia-js'
 import { createAnnotator } from '../core/annotator.js'
 
-function isError(value: unknown): value is CartesiaDownloadError {
+const isError = (value: unknown): value is CartesiaDownloadError => {
   return typeof value === 'object' && value !== null && 'type' in value
 }
 
-export async function runDownload(
+export const runDownload = async (
   args: RawCliArgs,
   env: Record<string, string | undefined>,
   deps: {
@@ -21,7 +21,7 @@ export async function runDownload(
     readTextFile: (path: string) => Promise<string | CartesiaDownloadError>
     readRcFile: (path: string) => Promise<RcConfig>
   },
-): Promise<void | CartesiaDownloadError> {
+): Promise<void | CartesiaDownloadError> => {
   // If --input is provided and --text is not, read text from file
   if (args.input && !args.text) {
     const textResult = await deps.readTextFile(args.input)
@@ -64,6 +64,7 @@ export async function runDownload(
   if (writeResult) {
     return writeResult
   }
+  return undefined
 }
 
 export const downloadCommand = define({

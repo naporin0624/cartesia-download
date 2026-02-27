@@ -25,20 +25,18 @@ Example input:
 Example output:
 <emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`
 
-export function createClaudeAnnotator(): TextAnnotator {
-  return {
-    async annotate(text: string): Promise<string | CartesiaDownloadError> {
-      try {
-        const { text: annotatedText } = await generateText({
-          model: anthropic('claude-sonnet-4-20250514'),
-          system: SYSTEM_PROMPT,
-          prompt: text,
-        })
+export const createClaudeAnnotator = (): TextAnnotator => ({
+  async annotate(text: string): Promise<string | CartesiaDownloadError> {
+    try {
+      const { text: annotatedText } = await generateText({
+        model: anthropic('claude-sonnet-4-20250514'),
+        system: SYSTEM_PROMPT,
+        prompt: text,
+      })
 
-        return annotatedText || text
-      } catch (cause) {
-        return { type: 'AnnotationError', cause }
-      }
-    },
-  }
-}
+      return annotatedText || text
+    } catch (cause) {
+      return { type: 'AnnotationError', cause }
+    }
+  },
+})

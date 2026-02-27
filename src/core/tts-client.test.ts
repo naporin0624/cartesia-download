@@ -12,6 +12,7 @@ const baseConfig: ResolvedConfig = {
   text: 'Hello, world!',
 }
 
+// eslint-disable-next-line func-style -- async generators require function* syntax
 async function* createMockAsyncIterable(data: Buffer): AsyncIterable<Uint8Array> {
   yield new Uint8Array(data)
 }
@@ -128,6 +129,7 @@ describe('createCartesiaTtsClient', () => {
   })
 
   it('returns TtsApiError when async iteration fails', async () => {
+    // eslint-disable-next-line func-style, require-yield -- async generators require function* syntax
     async function* brokenIterable(): AsyncIterable<Uint8Array> {
       throw new Error('Stream read error')
     }

@@ -14,7 +14,7 @@ type Mp3OutputFormat = {
 
 type OutputFormat = WavOutputFormat | Mp3OutputFormat
 
-export function buildOutputFormat(format: AudioFormat, sampleRate: number): OutputFormat {
+export const buildOutputFormat = (format: AudioFormat, sampleRate: number): OutputFormat => {
   if (format === 'wav') {
     return {
       container: 'wav',
@@ -42,7 +42,7 @@ export interface CartesiaLikeClient {
   }
 }
 
-async function asyncIterableToBuffer(iterable: AsyncIterable<Uint8Array>): Promise<Buffer> {
+const asyncIterableToBuffer = async (iterable: AsyncIterable<Uint8Array>): Promise<Buffer> => {
   const chunks: Buffer[] = []
   for await (const chunk of iterable) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
@@ -50,32 +50,30 @@ async function asyncIterableToBuffer(iterable: AsyncIterable<Uint8Array>): Promi
   return Buffer.concat(chunks)
 }
 
-export function createCartesiaTtsClient(client: CartesiaLikeClient): TtsClient {
-  return {
-    async generate(config: ResolvedConfig): Promise<TtsResult | CartesiaDownloadError> {
-      try {
-        const outputFormat = buildOutputFormat(config.format, config.sampleRate)
+export const createCartesiaTtsClient = (client: CartesiaLikeClient): TtsClient => ({
+  async generate(config: ResolvedConfig): Promise<TtsResult | CartesiaDownloadError> {
+    try {
+      const outputFormat = buildOutputFormat(config.format, config.sampleRate)
 
-        const response = await client.tts.bytes({
-          modelId: config.model,
-          transcript: config.text,
-          voice: { mode: 'id', id: config.voiceId },
-          language: 'ja',
-          outputFormat,
-        })
+      const response = await client.tts.bytes({
+        modelId: config.model,
+        transcript: config.text,
+        voice: { mode: 'id', id: config.voiceId },
+        language: 'ja',
+        outputFormat,
+      })
 
-        const buffer = await asyncIterableToBuffer(response)
+      const buffer = await asyncIterableToBuffer(response)
 
-        const arrayBuffer = new ArrayBuffer(buffer.byteLength)
-        new Uint8Array(arrayBuffer).set(new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength))
+      const arrayBuffer = new ArrayBuffer(buffer.byteLength)
+      new Uint8Array(arrayBuffer).set(new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength))
 
-        return {
-          audioData: arrayBuffer,
-          format: config.format,
-        }
-      } catch (cause) {
-        return { type: 'TtsApiError', cause }
+      return {
+        audioData: arrayBuffer,
+        format: config.format,
       }
-    },
-  }
-}
+    } catch (cause) {
+      return { type: 'TtsApiError', cause }
+    }
+  },
+})

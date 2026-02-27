@@ -1,36 +1,34 @@
 import { describe, it, expect, vi } from 'vitest'
 import { runDownload } from './download.js'
-import type { TtsClient, FileOutput, TtsResult, CartesiaDownloadError, TextAnnotator } from '../types.js'
+import type { TtsClient, FileOutput, TtsResult, CartesiaDownloadError, TextAnnotator, RcConfig } from '../types.js'
 
-function createMockTtsClient(result: TtsResult | CartesiaDownloadError): TtsClient {
-  return { generate: vi.fn().mockResolvedValue(result) }
-}
+const createMockTtsClient = (result: TtsResult | CartesiaDownloadError): TtsClient => ({
+  generate: vi.fn().mockResolvedValue(result),
+})
 
-function createMockFileOutput(result?: CartesiaDownloadError): FileOutput {
-  return { write: vi.fn().mockResolvedValue(result) }
-}
+const createMockFileOutput = (result?: CartesiaDownloadError): FileOutput => ({
+  write: vi.fn().mockResolvedValue(result),
+})
 
-function createMockAnnotator(result: string | CartesiaDownloadError): TextAnnotator {
-  return { annotate: vi.fn().mockResolvedValue(result) }
-}
+const createMockAnnotator = (result: string | CartesiaDownloadError): TextAnnotator => ({
+  annotate: vi.fn().mockResolvedValue(result),
+})
 
 const audioData = new ArrayBuffer(16)
 
-function createMockDeps(overrides?: {
+const createMockDeps = (overrides?: {
   ttsClient?: TtsClient
   fileOutput?: FileOutput
-  readTextFile?: ReturnType<typeof vi.fn>
-  readRcFile?: ReturnType<typeof vi.fn>
+  readTextFile?: (path: string) => Promise<string | CartesiaDownloadError>
+  readRcFile?: (path: string) => Promise<RcConfig>
   annotator?: TextAnnotator
-}) {
-  return {
-    ttsClient: overrides?.ttsClient ?? createMockTtsClient({ audioData, format: 'wav' }),
-    fileOutput: overrides?.fileOutput ?? createMockFileOutput(),
-    readTextFile: overrides?.readTextFile ?? vi.fn().mockResolvedValue('file content'),
-    readRcFile: overrides?.readRcFile ?? vi.fn().mockResolvedValue({}),
-    annotator: overrides?.annotator,
-  }
-}
+}) => ({
+  ttsClient: overrides?.ttsClient ?? createMockTtsClient({ audioData, format: 'wav' }),
+  fileOutput: overrides?.fileOutput ?? createMockFileOutput(),
+  readTextFile: overrides?.readTextFile ?? vi.fn<(path: string) => Promise<string | CartesiaDownloadError>>().mockResolvedValue('file content'),
+  readRcFile: overrides?.readRcFile ?? vi.fn<(path: string) => Promise<RcConfig>>().mockResolvedValue({}),
+  annotator: overrides?.annotator,
+})
 
 describe('runDownload', () => {
   it('generates audio and writes to file with --text', async () => {
