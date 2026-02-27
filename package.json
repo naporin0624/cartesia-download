@@ -22,5 +22,8 @@
   "lint-staged": {
     "*.{ts,tsx}": "oxlint"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@discordjs/opus", "better-sqlite3"]
+  }
 }
