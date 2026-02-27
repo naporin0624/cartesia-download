@@ -57,6 +57,7 @@ export type AnnotatorProvider = 'claude';
 
 export interface TextAnnotator {
   annotate(text: string): ResultAsync<string, AnnotationError>;
+  stream(text: string): ResultAsync<AsyncIterable<string>, AnnotationError>;
 }
 
 // --- IO interface ---
