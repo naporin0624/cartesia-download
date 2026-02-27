@@ -1,9 +1,10 @@
 import { define } from 'gunshi'
-import type { CartesiaDownloadError, FileOutput, RawCliArgs, RcConfig, TtsClient } from '../types.js'
+import type { CartesiaDownloadError, FileOutput, RawCliArgs, RcConfig, TextAnnotator, TtsClient } from '../types.js'
 import { readRcFile, readTextFile, resolveConfig } from '../core/config.js'
 import { createCartesiaTtsClient, type CartesiaLikeClient } from '../core/tts-client.js'
 import { createFileOutput } from '../core/output.js'
 import { CartesiaClient } from '@cartesia/cartesia-js'
+import { createAnnotator } from '../core/annotator.js'
 
 function isError(value: unknown): value is CartesiaDownloadError {
   return typeof value === 'object' && value !== null && 'type' in value
@@ -15,6 +16,7 @@ export async function runDownload(
   deps: {
     ttsClient?: TtsClient
     fileOutput?: FileOutput
+    annotator?: TextAnnotator
     createTtsClient?: (apiKey: string) => TtsClient
     readTextFile: (path: string) => Promise<string | CartesiaDownloadError>
     readRcFile: (path: string) => Promise<RcConfig>
@@ -35,15 +37,30 @@ export async function runDownload(
     return config
   }
 
-  const ttsClient = deps.ttsClient ?? deps.createTtsClient!(config.apiKey)
+  // Annotate text if annotator is provided and not skipped
+  const resolvedConfig = await (async () => {
+    if (deps.annotator && !args['no-annotate']) {
+      const annotated = await deps.annotator.annotate(config.text)
+      if (isError(annotated)) {
+        return annotated
+      }
+      return { ...config, text: annotated }
+    }
+    return config
+  })()
+  if (isError(resolvedConfig)) {
+    return resolvedConfig
+  }
+
+  const ttsClient = deps.ttsClient ?? deps.createTtsClient!(resolvedConfig.apiKey)
   const fileOutput = deps.fileOutput ?? createFileOutput()
 
-  const result = await ttsClient.generate(config)
+  const result = await ttsClient.generate(resolvedConfig)
   if (isError(result)) {
     return result
   }
 
-  const writeResult = await fileOutput.write(config.outputPath, result)
+  const writeResult = await fileOutput.write(resolvedConfig.outputPath, result)
   if (writeResult) {
     return writeResult
   }
@@ -89,6 +106,16 @@ export const downloadCommand = define({
       default: 44100,
       description: 'Sample rate',
     },
+    provider: {
+      type: 'string',
+      default: 'claude',
+      description: 'LLM provider for emotion annotation (claude)',
+    },
+    'no-annotate': {
+      type: 'boolean',
+      default: false,
+      description: 'Skip emotion annotation',
+    },
   },
   examples: `
 # Generate WAV from text
@@ -106,9 +133,25 @@ $ cartesia-download --input script.txt --voice-id xxx --format mp3 --output hell
       output: ctx.values.output,
       model: ctx.values.model,
       'sample-rate': ctx.values['sample-rate'],
+      provider: ctx.values.provider,
+      'no-annotate': ctx.values['no-annotate'],
     }
 
+    const noAnnotate = ctx.values['no-annotate']
+    const annotator: TextAnnotator | undefined = (() => {
+      if (noAnnotate) {
+        return undefined
+      }
+      const annotatorResult = createAnnotator(ctx.values.provider ?? 'claude')
+      if (isError(annotatorResult)) {
+        console.error(`Error: ${annotatorResult.type}`)
+        process.exit(1)
+      }
+      return annotatorResult
+    })()
+
     const result = await runDownload(args, process.env, {
+      annotator,
       createTtsClient: (apiKey) => {
         const client = new CartesiaClient({ apiKey })
         return createCartesiaTtsClient(client as unknown as CartesiaLikeClient)
