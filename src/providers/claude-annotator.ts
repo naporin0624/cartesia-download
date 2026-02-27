@@ -20,6 +20,7 @@ Rules:
 4. Do NOT add any explanation, markdown, or wrapping — output ONLY the annotated text
 5. Use emotion tags liberally but speed/volume tags sparingly (only when clearly needed)
 6. If the text is already neutral with no clear emotional variation, still add <emotion value="neutral"/> at the start
+7. ONLY use emotion values from this exact list: neutral, angry, excited, content, sad, scared, happy, curious, sarcastic, hesitant, confident, calm, surprised. Do NOT invent new values like "shocked", "confused", "panicked", "bewildered", "concerned", "anxious", "worried" etc.
 
 Example input:
 やったー！テストに合格した！でも、次の試験が心配だな…
@@ -28,9 +29,9 @@ Example output:
 <emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`;
 
 const STREAM_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
-7. Insert [SEP] between natural speech units (breath pauses, emotion transitions, sentence endings)
-8. Do NOT place [SEP] after the final chunk
-9. Each [SEP]-delimited segment should be a natural, self-contained speech unit`;
+8. Insert [SEP] between natural speech units (breath pauses, emotion transitions, sentence endings)
+9. Do NOT place [SEP] after the final chunk
+10. Each [SEP]-delimited segment should be a natural, self-contained speech unit`;
 
 type ClaudeAnnotatorOptions = {
   apiKey?: string;
