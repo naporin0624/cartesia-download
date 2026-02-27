@@ -1,3 +1,5 @@
+import type { ResultAsync } from 'neverthrow';
+
 export type AudioFormat = 'wav' | 'mp3';
 
 export interface ResolvedConfig {
@@ -43,11 +45,11 @@ export interface TtsResult {
 }
 
 export interface TtsClient {
-  generate(config: ResolvedConfig): Promise<TtsResult | CartesiaDownloadError>;
+  generate(config: ResolvedConfig): ResultAsync<TtsResult, CartesiaDownloadError>;
 }
 
 export interface FileOutput {
-  write(path: string, result: TtsResult): Promise<void | CartesiaDownloadError>;
+  write(path: string, result: TtsResult): ResultAsync<void, CartesiaDownloadError>;
 }
 
 export type CartesiaDownloadError =
@@ -65,5 +67,5 @@ export type CartesiaDownloadError =
 export type AnnotatorProvider = 'claude';
 
 export interface TextAnnotator {
-  annotate(text: string): Promise<string | CartesiaDownloadError>;
+  annotate(text: string): ResultAsync<string, CartesiaDownloadError>;
 }

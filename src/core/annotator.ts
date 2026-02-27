@@ -1,3 +1,4 @@
+import { ok, err, type Result } from 'neverthrow';
 import type { TextAnnotator, CartesiaDownloadError } from '../types.js';
 import { createClaudeAnnotator } from '../providers/claude-annotator.js';
 
@@ -6,11 +7,11 @@ type AnnotatorOptions = {
   model?: string;
 };
 
-export const createAnnotator = (provider: string, options?: AnnotatorOptions): TextAnnotator | CartesiaDownloadError => {
+export const createAnnotator = (provider: string, options?: AnnotatorOptions): Result<TextAnnotator, CartesiaDownloadError> => {
   switch (provider) {
     case 'claude':
-      return createClaudeAnnotator(options);
+      return ok(createClaudeAnnotator(options));
     default:
-      return { type: 'UnsupportedProvider', provider };
+      return err({ type: 'UnsupportedProvider', provider });
   }
 };

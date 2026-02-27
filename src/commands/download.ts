@@ -1,82 +1,55 @@
 import path from 'node:path';
 import { define } from 'gunshi';
-import type { CartesiaDownloadError, FileOutput, RawCliArgs, RcConfig, TextAnnotator, TtsClient } from '../types.js';
+import { okAsync, errAsync, ResultAsync, type Result } from 'neverthrow';
+import type { CartesiaDownloadError, FileOutput, RawCliArgs, RcConfig, ResolvedConfig, TextAnnotator, TtsClient } from '../types.js';
 import { readRcFile, readTextFile, resolveConfig } from '../core/config.js';
 import { createCartesiaTtsClient, type CartesiaLikeClient } from '../core/tts-client.js';
 import { createFileOutput } from '../core/output.js';
 import { CartesiaClient } from '@cartesia/cartesia-js';
 import { createAnnotator } from '../core/annotator.js';
 
-const isError = (value: unknown): value is CartesiaDownloadError => {
-  return typeof value === 'object' && value !== null && 'type' in value;
+type DownloadDeps = {
+  ttsClient?: TtsClient;
+  fileOutput?: FileOutput;
+  annotator?: TextAnnotator;
+  createTtsClient?: (apiKey: string) => TtsClient;
+  readTextFile: (filePath: string) => ResultAsync<string, CartesiaDownloadError>;
+  readRcFile: (path: string) => Promise<RcConfig>;
+  writeTextFile?: (filePath: string, content: string) => ResultAsync<void, CartesiaDownloadError>;
 };
 
-export const runDownload = async (
-  args: RawCliArgs,
-  env: Record<string, string | undefined>,
-  deps: {
-    ttsClient?: TtsClient;
-    fileOutput?: FileOutput;
-    annotator?: TextAnnotator;
-    createTtsClient?: (apiKey: string) => TtsClient;
-    readTextFile: (path: string) => Promise<string | CartesiaDownloadError>;
-    readRcFile: (path: string) => Promise<RcConfig>;
-    writeTextFile?: (filePath: string, content: string) => Promise<void | CartesiaDownloadError>;
-  },
-): Promise<void | CartesiaDownloadError> => {
-  // If --input is provided and --text is not, read text from file
+const resolveText = (args: RawCliArgs, deps: DownloadDeps): ResultAsync<RawCliArgs, CartesiaDownloadError> => {
   if (args.input && !args.text) {
-    const textResult = await deps.readTextFile(args.input);
-    if (isError(textResult)) {
-      return textResult;
-    }
-    args = { ...args, text: textResult };
+    return deps.readTextFile(args.input).map((text) => ({ ...args, text }));
   }
+  return okAsync(args);
+};
 
-  const rc = await deps.readRcFile('.cartesiarc.json');
-  const config = resolveConfig(args, env, rc);
-  if (isError(config)) {
-    return config;
-  }
-
-  // Annotate text if annotator is provided and not skipped
-  const resolvedConfig = await (async () => {
-    if (deps.annotator && !args['no-annotate']) {
-      const annotated = await deps.annotator.annotate(config.text);
-      if (isError(annotated)) {
-        return annotated;
-      }
-      // Save annotated text as .txt alongside the audio file
+const annotateText = (config: ResolvedConfig, args: RawCliArgs, deps: DownloadDeps): ResultAsync<ResolvedConfig, CartesiaDownloadError> => {
+  if (deps.annotator && !args['no-annotate']) {
+    return deps.annotator.annotate(config.text).andThen((annotated) => {
       if (deps.writeTextFile) {
         const parsed = path.parse(config.outputPath);
         const txtPath = path.join(parsed.dir, `${parsed.name}.txt`);
-        const txtResult = await deps.writeTextFile(txtPath, annotated);
-        if (isError(txtResult)) {
-          return txtResult;
-        }
+        return deps.writeTextFile(txtPath, annotated).map(() => ({ ...config, text: annotated }));
       }
-      return { ...config, text: annotated };
-    }
-    return config;
-  })();
-  if (isError(resolvedConfig)) {
-    return resolvedConfig;
+      return okAsync({ ...config, text: annotated });
+    });
   }
-
-  const ttsClient = deps.ttsClient ?? deps.createTtsClient!(resolvedConfig.apiKey);
-  const fileOutput = deps.fileOutput ?? createFileOutput();
-
-  const result = await ttsClient.generate(resolvedConfig);
-  if (isError(result)) {
-    return result;
-  }
-
-  const writeResult = await fileOutput.write(resolvedConfig.outputPath, result);
-  if (writeResult) {
-    return writeResult;
-  }
-  return undefined;
+  return okAsync(config);
 };
+
+const fromResult = <T>(result: Result<T, CartesiaDownloadError>): ResultAsync<T, CartesiaDownloadError> => (result.isOk() ? okAsync(result.value) : errAsync(result.error));
+
+export const runDownload = (args: RawCliArgs, env: Record<string, string | undefined>, deps: DownloadDeps): ResultAsync<void, CartesiaDownloadError> =>
+  resolveText(args, deps)
+    .andThen((resolvedArgs) => ResultAsync.fromSafePromise<RcConfig, CartesiaDownloadError>(deps.readRcFile('.cartesiarc.json')).andThen((rc) => fromResult(resolveConfig(resolvedArgs, env, rc))))
+    .andThen((config) => annotateText(config, args, deps))
+    .andThen((config) => {
+      const ttsClient = deps.ttsClient ?? deps.createTtsClient!(config.apiKey);
+      const fileOutput = deps.fileOutput ?? createFileOutput();
+      return ttsClient.generate(config).andThen((result) => fileOutput.write(config.outputPath, result));
+    });
 
 export const downloadCommand = define({
   name: 'download',
@@ -169,14 +142,23 @@ $ cartesia-download --input script.txt --voice-id xxx --format mp3 --output hell
       const providerApiKey = ctx.values['provider-api-key'] ?? rc.providerApiKey;
       const providerModel = ctx.values['provider-model'] ?? rc.providerModel;
       const annotatorResult = createAnnotator(provider, { apiKey: providerApiKey, model: providerModel });
-      if (isError(annotatorResult)) {
-        console.error(`Error: ${annotatorResult.type}`);
+      if (annotatorResult.isErr()) {
+        console.error(`Error: ${annotatorResult.error.type}`);
         process.exit(1);
       }
-      return annotatorResult;
+      return annotatorResult.value;
     })();
 
-    const result = await runDownload(args, process.env, {
+    const writeTextFile = (filePath: string, content: string): ResultAsync<void, CartesiaDownloadError> =>
+      ResultAsync.fromPromise(
+        (async () => {
+          const fs = await import('node:fs/promises');
+          await fs.writeFile(filePath, content, 'utf-8');
+        })(),
+        (cause): CartesiaDownloadError => ({ type: 'FileWriteError', path: filePath, cause }),
+      );
+
+    await runDownload(args, process.env, {
       annotator,
       createTtsClient: (apiKey) => {
         const client = new CartesiaClient({ apiKey });
@@ -184,20 +166,15 @@ $ cartesia-download --input script.txt --voice-id xxx --format mp3 --output hell
       },
       readTextFile,
       readRcFile,
-      writeTextFile: async (filePath, content) => {
-        try {
-          const fs = await import('node:fs/promises');
-          await fs.writeFile(filePath, content, 'utf-8');
-        } catch (cause) {
-          return { type: 'FileWriteError', path: filePath, cause };
-        }
+      writeTextFile,
+    }).match(
+      () => {
+        console.log('Audio saved successfully');
       },
-    });
-    if (result) {
-      console.error(`Error: ${result.type}`);
-      process.exit(1);
-    }
-
-    console.log('Audio saved successfully');
+      (error) => {
+        console.error(`Error: ${error.type}`);
+        process.exit(1);
+      },
+    );
   },
 });

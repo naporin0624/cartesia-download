@@ -1,17 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
+import { okAsync, errAsync, ResultAsync } from 'neverthrow';
 import { runDownload } from './download.js';
 import type { TtsClient, FileOutput, TtsResult, CartesiaDownloadError, TextAnnotator, RcConfig } from '../types.js';
 
 const createMockTtsClient = (result: TtsResult | CartesiaDownloadError): TtsClient => ({
-  generate: vi.fn().mockResolvedValue(result),
+  generate: vi.fn().mockReturnValue('audioData' in result ? okAsync(result) : errAsync(result)),
 });
 
-const createMockFileOutput = (result?: CartesiaDownloadError): FileOutput => ({
-  write: vi.fn().mockResolvedValue(result),
+const createMockFileOutput = (error?: CartesiaDownloadError): FileOutput => ({
+  write: vi.fn().mockReturnValue(error ? errAsync(error) : okAsync(undefined)),
 });
 
 const createMockAnnotator = (result: string | CartesiaDownloadError): TextAnnotator => ({
-  annotate: vi.fn().mockResolvedValue(result),
+  annotate: vi.fn().mockReturnValue(typeof result === 'string' ? okAsync(result) : errAsync(result)),
 });
 
 const audioData = new ArrayBuffer(16);
@@ -19,13 +20,13 @@ const audioData = new ArrayBuffer(16);
 const createMockDeps = (overrides?: {
   ttsClient?: TtsClient;
   fileOutput?: FileOutput;
-  readTextFile?: (path: string) => Promise<string | CartesiaDownloadError>;
+  readTextFile?: (filePath: string) => ResultAsync<string, CartesiaDownloadError>;
   readRcFile?: (path: string) => Promise<RcConfig>;
   annotator?: TextAnnotator;
 }) => ({
   ttsClient: overrides?.ttsClient ?? createMockTtsClient({ audioData, format: 'wav' }),
   fileOutput: overrides?.fileOutput ?? createMockFileOutput(),
-  readTextFile: overrides?.readTextFile ?? vi.fn<(path: string) => Promise<string | CartesiaDownloadError>>().mockResolvedValue('file content'),
+  readTextFile: overrides?.readTextFile ?? vi.fn<(filePath: string) => ResultAsync<string, CartesiaDownloadError>>().mockReturnValue(okAsync('file content')),
   readRcFile: overrides?.readRcFile ?? vi.fn<(path: string) => Promise<RcConfig>>().mockResolvedValue({}),
   annotator: overrides?.annotator,
 });
@@ -38,7 +39,7 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, fileOutput }));
 
-    expect(result).toBeUndefined();
+    expect(result.isOk()).toBe(true);
     expect(ttsClient.generate).toHaveBeenCalledOnce();
     expect(fileOutput.write).toHaveBeenCalledWith('out.wav', ttsResult);
   });
@@ -54,11 +55,11 @@ describe('runDownload', () => {
       createMockDeps({
         ttsClient,
         fileOutput,
-        readTextFile: vi.fn<(path: string) => Promise<string | CartesiaDownloadError>>().mockResolvedValue('file content'),
+        readTextFile: vi.fn<(filePath: string) => ResultAsync<string, CartesiaDownloadError>>().mockReturnValue(okAsync('file content')),
       }),
     );
 
-    expect(result).toBeUndefined();
+    expect(result.isOk()).toBe(true);
     expect(ttsClient.generate).toHaveBeenCalledOnce();
     const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(config.text).toBe('file content');
@@ -77,18 +78,20 @@ describe('runDownload', () => {
       { CARTESIA_API_KEY: 'key1' },
       createMockDeps({
         ttsClient,
-        readTextFile: vi.fn<(path: string) => Promise<string | CartesiaDownloadError>>().mockResolvedValue(fileReadError),
+        readTextFile: vi.fn<(filePath: string) => ResultAsync<string, CartesiaDownloadError>>().mockReturnValue(errAsync(fileReadError)),
       }),
     );
 
-    expect(result).toEqual(fileReadError);
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toEqual(fileReadError);
     expect(ttsClient.generate).not.toHaveBeenCalled();
   });
 
   it('returns error when config resolution fails (missing apiKey)', async () => {
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, {}, createMockDeps());
 
-    expect(result).toEqual({ type: 'MissingApiKey' });
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toEqual({ type: 'MissingApiKey' });
   });
 
   it('returns error when TTS generation fails', async () => {
@@ -97,7 +100,8 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient }));
 
-    expect(result).toEqual(apiError);
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toEqual(apiError);
   });
 
   it('returns error when file write fails', async () => {
@@ -112,18 +116,23 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, fileOutput }));
 
-    expect(result).toEqual(writeError);
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toEqual(writeError);
   });
 
   it('prefers --text over --input when both provided', async () => {
     const ttsResult: TtsResult = { audioData, format: 'wav' };
     const ttsClient = createMockTtsClient(ttsResult);
-    const readTextFile = vi.fn<(path: string) => Promise<string | CartesiaDownloadError>>().mockResolvedValue('from file');
+    const readTextFileMock = vi.fn<(filePath: string) => ResultAsync<string, CartesiaDownloadError>>().mockReturnValue(okAsync('from file'));
 
-    const result = await runDownload({ text: 'from cli', input: '/tmp/file.txt', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, readTextFile }));
+    const result = await runDownload(
+      { text: 'from cli', input: '/tmp/file.txt', 'voice-id': 'v1', output: 'out.wav' },
+      { CARTESIA_API_KEY: 'key1' },
+      createMockDeps({ ttsClient, readTextFile: readTextFileMock }),
+    );
 
-    expect(result).toBeUndefined();
-    expect(readTextFile).not.toHaveBeenCalled();
+    expect(result.isOk()).toBe(true);
+    expect(readTextFileMock).not.toHaveBeenCalled();
     const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(config.text).toBe('from cli');
   });
@@ -135,7 +144,7 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
-    expect(result).toBeUndefined();
+    expect(result.isOk()).toBe(true);
     expect(annotator.annotate).toHaveBeenCalledWith('hello');
     const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(config.text).toBe('<emotion value="excited"/> hello');
@@ -148,7 +157,7 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav', 'no-annotate': true }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
-    expect(result).toBeUndefined();
+    expect(result.isOk()).toBe(true);
     expect(annotator.annotate).not.toHaveBeenCalled();
     const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(config.text).toBe('hello');
@@ -156,11 +165,12 @@ describe('runDownload', () => {
 
   it('returns error when annotation fails', async () => {
     const annotationError: CartesiaDownloadError = { type: 'AnnotationError', cause: new Error('LLM down') };
-    const annotator: TextAnnotator = { annotate: vi.fn().mockResolvedValue(annotationError) };
+    const annotator = createMockAnnotator(annotationError);
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ annotator }));
 
-    expect(result).toEqual(annotationError);
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toEqual(annotationError);
   });
 
   it('proceeds without annotation when annotator is not provided', async () => {
@@ -169,7 +179,7 @@ describe('runDownload', () => {
 
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient }));
 
-    expect(result).toBeUndefined();
+    expect(result.isOk()).toBe(true);
     const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(config.text).toBe('hello');
   });

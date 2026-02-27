@@ -1,12 +1,9 @@
-import fs from 'node:fs/promises'
-import type { CartesiaDownloadError, FileOutput, TtsResult } from '../types.js'
+import fs from 'node:fs/promises';
+import { ResultAsync } from 'neverthrow';
+import type { CartesiaDownloadError, FileOutput, TtsResult } from '../types.js';
 
 export const createFileOutput = (): FileOutput => ({
-  async write(path: string, result: TtsResult): Promise<void | CartesiaDownloadError> {
-    try {
-      await fs.writeFile(path, Buffer.from(result.audioData))
-    } catch (cause) {
-      return { type: 'FileWriteError', path, cause }
-    }
+  write(path: string, result: TtsResult): ResultAsync<void, CartesiaDownloadError> {
+    return ResultAsync.fromPromise(fs.writeFile(path, Buffer.from(result.audioData)), (cause): CartesiaDownloadError => ({ type: 'FileWriteError', path, cause }));
   },
-})
+});
