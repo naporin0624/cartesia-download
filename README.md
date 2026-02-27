@@ -41,24 +41,24 @@ CARTESIA_API_KEY=your_key pnpm dev -- \
 
 ## オプション
 
-| オプション | 短縮 | 型 | デフォルト | 説明 |
-|-----------|------|----|-----------|------|
-| `--text` | `-t` | string | - | 合成するテキスト |
-| `--input` | `-i` | string | - | テキストファイルのパス |
-| `--voice-id` | | string | - | Cartesia の voice ID |
-| `--output` | `-o` | string | - | 出力ファイルパス |
-| `--format` | `-f` | string | `wav` | 出力形式（`wav` または `mp3`） |
-| `--model` | `-m` | string | `sonic-3` | モデル ID |
-| `--sample-rate` | | number | `44100` | サンプルレート（Hz） |
+| オプション      | 短縮 | 型     | デフォルト | 説明                           |
+| --------------- | ---- | ------ | ---------- | ------------------------------ |
+| `--text`        | `-t` | string | -          | 合成するテキスト               |
+| `--input`       | `-i` | string | -          | テキストファイルのパス         |
+| `--voice-id`    |      | string | -          | Cartesia の voice ID           |
+| `--output`      | `-o` | string | -          | 出力ファイルパス               |
+| `--format`      | `-f` | string | `wav`      | 出力形式（`wav` または `mp3`） |
+| `--model`       | `-m` | string | `sonic-3`  | モデル ID                      |
+| `--sample-rate` |      | number | `44100`    | サンプルレート（Hz）           |
 
 ## 設定
 
 ### 環境変数
 
-| 変数名 | 説明 |
-|--------|------|
-| `CARTESIA_API_KEY` | Cartesia API キー（必須） |
-| `CARTESIA_VOICE_ID` | デフォルトの voice ID |
+| 変数名              | 説明                      |
+| ------------------- | ------------------------- |
+| `CARTESIA_API_KEY`  | Cartesia API キー（必須） |
+| `CARTESIA_VOICE_ID` | デフォルトの voice ID     |
 
 ### 設定ファイル
 

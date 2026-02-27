@@ -6,11 +6,11 @@
 
 ## エンドポイントの選び方
 
-| エンドポイント | メソッド | パス | 出力形式 | 用途 |
-|---|---|---|---|---|
-| **Bytes** | `POST` | `/tts/bytes` | WAV, MP3, raw PCM | **ファイル保存に最適** |
-| **SSE** | `POST` | `/tts/sse` | raw PCMのみ | HTTPストリーミング |
-| **WebSocket** | `WSS` | `/tts/websocket` | raw PCMのみ | リアルタイム・最低遅延 |
+| エンドポイント | メソッド | パス             | 出力形式          | 用途                   |
+| -------------- | -------- | ---------------- | ----------------- | ---------------------- |
+| **Bytes**      | `POST`   | `/tts/bytes`     | WAV, MP3, raw PCM | **ファイル保存に最適** |
+| **SSE**        | `POST`   | `/tts/sse`       | raw PCMのみ       | HTTPストリーミング     |
+| **WebSocket**  | `WSS`    | `/tts/websocket` | raw PCMのみ       | リアルタイム・最低遅延 |
 
 ファイル保存目的なら **Bytesエンドポイント一択**です。WAV/MP3コンテナのヘッダーも自動で付与されるため、レスポンスをそのままファイルに書き込むだけで再生可能なファイルが得られます。
 
@@ -102,19 +102,19 @@ npm install @cartesia/cartesia-js
 ```
 
 ```typescript
-import { CartesiaClient } from "@cartesia/cartesia-js";
-import fs from "node:fs";
+import { CartesiaClient } from '@cartesia/cartesia-js';
+import fs from 'node:fs';
 
 const client = new CartesiaClient({ apiKey: process.env.CARTESIA_API_KEY });
 
 const response = await client.tts.bytes({
-    modelId: "sonic-3",
-    voice: { mode: "id", id: "your-cloned-voice-id" },
-    outputFormat: { container: "wav", encoding: "pcm_s16le", sampleRate: 44100 },
-    transcript: "クローンされた声でこんにちは！",
+  modelId: 'sonic-3',
+  voice: { mode: 'id', id: 'your-cloned-voice-id' },
+  outputFormat: { container: 'wav', encoding: 'pcm_s16le', sampleRate: 44100 },
+  transcript: 'クローンされた声でこんにちは！',
 });
 
-fs.writeFileSync("output.wav", Buffer.from(await response.bytes()));
+fs.writeFileSync('output.wav', Buffer.from(await response.bytes()));
 ```
 
 ---
@@ -138,12 +138,12 @@ curl -X POST "https://api.cartesia.ai/tts/bytes" \
 
 ## output_format の設定まとめ
 
-| コンテナ | エンコーディング | サンプルレート | 備考 |
-|---|---|---|---|
-| `wav` | `pcm_s16le` | `44100` | **汎用的でおすすめ** |
-| `wav` | `pcm_f32le` | `44100` | 高品質・ファイルサイズ大 |
-| `mp3` | —（`bit_rate`を使う） | `44100` | 容量を抑えたい場合 |
-| `raw` | `pcm_s16le` | `22050` | WebSocket/SSE向け |
+| コンテナ | エンコーディング      | サンプルレート | 備考                     |
+| -------- | --------------------- | -------------- | ------------------------ |
+| `wav`    | `pcm_s16le`           | `44100`        | **汎用的でおすすめ**     |
+| `wav`    | `pcm_f32le`           | `44100`        | 高品質・ファイルサイズ大 |
+| `mp3`    | —（`bit_rate`を使う） | `44100`        | 容量を抑えたい場合       |
+| `raw`    | `pcm_s16le`           | `22050`        | WebSocket/SSE向け        |
 
 ---
 

@@ -9,10 +9,10 @@ CLI に LLM ベースの感情アノテーション機能を追加し、入力�
 ### Interface
 
 ```typescript
-export type AnnotatorProvider = 'claude'
+export type AnnotatorProvider = 'claude';
 
 export interface TextAnnotator {
-  annotate(text: string): Promise<string | CartesiaDownloadError>
+  annotate(text: string): Promise<string | CartesiaDownloadError>;
 }
 ```
 
@@ -41,10 +41,10 @@ input text
 
 ### CLI Flags
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--provider` | string | `claude` | LLM provider for annotation |
-| `--no-annotate` | boolean | `false` | Skip emotion annotation |
+| Flag            | Type    | Default  | Description                 |
+| --------------- | ------- | -------- | --------------------------- |
+| `--provider`    | string  | `claude` | LLM provider for annotation |
+| `--no-annotate` | boolean | `false`  | Skip emotion annotation     |
 
 ### RcConfig Additions
 
@@ -71,6 +71,7 @@ noAnnotate?: boolean
 ### Prompt Design
 
 LLM に以下を指示:
+
 1. テキストを文/セクション単位で分析
 2. 各文の文脈から適切な感情・速度・音量を判断
 3. Cartesia SSML タグを挿入
@@ -78,6 +79,7 @@ LLM に以下を指示:
 5. 出力は SSML タグ付きテキストのみ（説明不要）
 
 対応 SSML タグ:
+
 - `<emotion value="..."/>` - 感情 (neutral, angry, excited, content, sad, scared 等)
 - `<speed ratio="..."/>` - 速度 (0.6-1.5)
 - `<volume ratio="..."/>` - 音量 (0.5-2.0)

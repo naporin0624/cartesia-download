@@ -13,11 +13,13 @@
 ### Task 1: Install dependencies
 
 **Files:**
+
 - Modify: `package.json`
 
 **Step 1: Install AI SDK packages**
 
 Run:
+
 ```bash
 pnpm add ai @ai-sdk/anthropic
 ```
@@ -39,6 +41,7 @@ git commit -m "feat: add ai sdk and anthropic provider dependencies"
 ### Task 2: Add types to types.ts
 
 **Files:**
+
 - Modify: `src/types.ts`
 
 **Step 1: Write the failing test**
@@ -50,10 +53,10 @@ No test file needed — these are type definitions. Verify with typecheck.
 Add to the end of `src/types.ts`:
 
 ```typescript
-export type AnnotatorProvider = 'claude'
+export type AnnotatorProvider = 'claude';
 
 export interface TextAnnotator {
-  annotate(text: string): Promise<string | CartesiaDownloadError>
+  annotate(text: string): Promise<string | CartesiaDownloadError>;
 }
 ```
 
@@ -95,6 +98,7 @@ git commit -m "feat: add TextAnnotator interface and annotation error types"
 ### Task 3: Implement claude-annotator provider
 
 **Files:**
+
 - Create: `src/providers/claude-annotator.ts`
 - Create: `src/providers/claude-annotator.test.ts`
 
@@ -103,61 +107,61 @@ git commit -m "feat: add TextAnnotator interface and annotation error types"
 Create `src/providers/claude-annotator.test.ts`:
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest'
-import { createClaudeAnnotator } from './claude-annotator.js'
-import type { CartesiaDownloadError } from '../types.js'
+import { describe, it, expect, vi } from 'vitest';
+import { createClaudeAnnotator } from './claude-annotator.js';
+import type { CartesiaDownloadError } from '../types.js';
 
 vi.mock('ai', () => ({
   generateText: vi.fn(),
-}))
+}));
 
-import { generateText } from 'ai'
+import { generateText } from 'ai';
 
-const mockGenerateText = vi.mocked(generateText)
+const mockGenerateText = vi.mocked(generateText);
 
 describe('createClaudeAnnotator', () => {
   it('returns SSML-annotated text from Claude', async () => {
-    const annotatedText = '<emotion value="excited"/> こんにちは！ <emotion value="neutral"/> 今日はいい天気ですね。'
+    const annotatedText = '<emotion value="excited"/> こんにちは！ <emotion value="neutral"/> 今日はいい天気ですね。';
     mockGenerateText.mockResolvedValue({
       text: annotatedText,
-    } as Awaited<ReturnType<typeof generateText>>)
+    } as Awaited<ReturnType<typeof generateText>>);
 
-    const annotator = createClaudeAnnotator()
-    const result = await annotator.annotate('こんにちは！今日はいい天気ですね。')
+    const annotator = createClaudeAnnotator();
+    const result = await annotator.annotate('こんにちは！今日はいい天気ですね。');
 
-    expect(result).toBe(annotatedText)
-    expect(mockGenerateText).toHaveBeenCalledOnce()
+    expect(result).toBe(annotatedText);
+    expect(mockGenerateText).toHaveBeenCalledOnce();
     expect(mockGenerateText).toHaveBeenCalledWith(
       expect.objectContaining({
         system: expect.stringContaining('SSML'),
         prompt: 'こんにちは！今日はいい天気ですね。',
       }),
-    )
-  })
+    );
+  });
 
   it('returns AnnotationError when generateText throws', async () => {
-    const apiError = new Error('API key invalid')
-    mockGenerateText.mockRejectedValue(apiError)
+    const apiError = new Error('API key invalid');
+    mockGenerateText.mockRejectedValue(apiError);
 
-    const annotator = createClaudeAnnotator()
-    const result = await annotator.annotate('テスト')
+    const annotator = createClaudeAnnotator();
+    const result = await annotator.annotate('テスト');
 
-    const error = result as CartesiaDownloadError
-    expect(error.type).toBe('AnnotationError')
-    expect((error as { type: 'AnnotationError'; cause: unknown }).cause).toBe(apiError)
-  })
+    const error = result as CartesiaDownloadError;
+    expect(error.type).toBe('AnnotationError');
+    expect((error as { type: 'AnnotationError'; cause: unknown }).cause).toBe(apiError);
+  });
 
   it('returns original text when Claude returns empty string', async () => {
     mockGenerateText.mockResolvedValue({
       text: '',
-    } as Awaited<ReturnType<typeof generateText>>)
+    } as Awaited<ReturnType<typeof generateText>>);
 
-    const annotator = createClaudeAnnotator()
-    const result = await annotator.annotate('元のテキスト')
+    const annotator = createClaudeAnnotator();
+    const result = await annotator.annotate('元のテキスト');
 
-    expect(result).toBe('元のテキスト')
-  })
-})
+    expect(result).toBe('元のテキスト');
+  });
+});
 ```
 
 **Step 2: Run test to verify it fails**
@@ -170,9 +174,9 @@ Expected: FAIL — module not found
 Create `src/providers/claude-annotator.ts`:
 
 ```typescript
-import { generateText } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
-import type { TextAnnotator, CartesiaDownloadError } from '../types.js'
+import { generateText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import type { TextAnnotator, CartesiaDownloadError } from '../types.js';
 
 const SYSTEM_PROMPT = `You are a speech emotion annotator for the Cartesia TTS engine.
 
@@ -195,7 +199,7 @@ Example input:
 やったー！テストに合格した！でも、次の試験が心配だな…
 
 Example output:
-<emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`
+<emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`;
 
 export function createClaudeAnnotator(): TextAnnotator {
   return {
@@ -205,14 +209,14 @@ export function createClaudeAnnotator(): TextAnnotator {
           model: anthropic('claude-sonnet-4-20250514'),
           system: SYSTEM_PROMPT,
           prompt: text,
-        })
+        });
 
-        return annotatedText || text
+        return annotatedText || text;
       } catch (cause) {
-        return { type: 'AnnotationError', cause }
+        return { type: 'AnnotationError', cause };
       }
     },
-  }
+  };
 }
 ```
 
@@ -233,6 +237,7 @@ git commit -m "feat: implement Claude annotator with AI SDK"
 ### Task 4: Implement annotator factory
 
 **Files:**
+
 - Create: `src/core/annotator.ts`
 - Create: `src/core/annotator.test.ts`
 
@@ -241,29 +246,29 @@ git commit -m "feat: implement Claude annotator with AI SDK"
 Create `src/core/annotator.test.ts`:
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest'
-import { createAnnotator } from './annotator.js'
-import type { CartesiaDownloadError } from '../types.js'
+import { describe, it, expect, vi } from 'vitest';
+import { createAnnotator } from './annotator.js';
+import type { CartesiaDownloadError } from '../types.js';
 
 vi.mock('../providers/claude-annotator.js', () => ({
   createClaudeAnnotator: vi.fn(() => ({
     annotate: vi.fn().mockResolvedValue('annotated text'),
   })),
-}))
+}));
 
 describe('createAnnotator', () => {
   it('returns a Claude annotator for provider "claude"', () => {
-    const result = createAnnotator('claude')
-    expect(result).not.toHaveProperty('type')
-    expect(result).toHaveProperty('annotate')
-  })
+    const result = createAnnotator('claude');
+    expect(result).not.toHaveProperty('type');
+    expect(result).toHaveProperty('annotate');
+  });
 
   it('returns UnsupportedProvider error for unknown provider', () => {
-    const result = createAnnotator('unknown-provider')
-    const error = result as CartesiaDownloadError
-    expect(error).toEqual({ type: 'UnsupportedProvider', provider: 'unknown-provider' })
-  })
-})
+    const result = createAnnotator('unknown-provider');
+    const error = result as CartesiaDownloadError;
+    expect(error).toEqual({ type: 'UnsupportedProvider', provider: 'unknown-provider' });
+  });
+});
 ```
 
 **Step 2: Run test to verify it fails**
@@ -276,15 +281,15 @@ Expected: FAIL — module not found
 Create `src/core/annotator.ts`:
 
 ```typescript
-import type { TextAnnotator, CartesiaDownloadError } from '../types.js'
-import { createClaudeAnnotator } from '../providers/claude-annotator.js'
+import type { TextAnnotator, CartesiaDownloadError } from '../types.js';
+import { createClaudeAnnotator } from '../providers/claude-annotator.js';
 
 export function createAnnotator(provider: string): TextAnnotator | CartesiaDownloadError {
   switch (provider) {
     case 'claude':
-      return createClaudeAnnotator()
+      return createClaudeAnnotator();
     default:
-      return { type: 'UnsupportedProvider', provider }
+      return { type: 'UnsupportedProvider', provider };
   }
 }
 ```
@@ -306,6 +311,7 @@ git commit -m "feat: add annotator factory with strategy pattern"
 ### Task 5: Integrate annotator into download command
 
 **Files:**
+
 - Modify: `src/commands/download.ts`
 - Modify: `src/commands/download.test.ts`
 
@@ -315,11 +321,11 @@ Add to `src/commands/download.test.ts` — new tests for annotation behavior:
 
 ```typescript
 // Add to imports:
-import type { TextAnnotator } from '../types.js'
+import type { TextAnnotator } from '../types.js';
 
 // Add mock helper:
 function createMockAnnotator(result: string | CartesiaDownloadError): TextAnnotator {
-  return { annotate: vi.fn().mockResolvedValue(result) }
+  return { annotate: vi.fn().mockResolvedValue(result) };
 }
 
 // Add to createMockDeps overrides type and function:
@@ -329,68 +335,52 @@ function createMockAnnotator(result: string | CartesiaDownloadError): TextAnnota
 // New test cases:
 
 it('annotates text before TTS generation when annotator is provided', async () => {
-  const ttsResult: TtsResult = { audioData, format: 'wav' }
-  const ttsClient = createMockTtsClient(ttsResult)
-  const annotator = createMockAnnotator('<emotion value="excited"/> hello')
+  const ttsResult: TtsResult = { audioData, format: 'wav' };
+  const ttsClient = createMockTtsClient(ttsResult);
+  const annotator = createMockAnnotator('<emotion value="excited"/> hello');
 
-  const result = await runDownload(
-    { text: 'hello', 'voice-id': 'v1', output: 'out.wav' },
-    { CARTESIA_API_KEY: 'key1' },
-    createMockDeps({ ttsClient, annotator }),
-  )
+  const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
-  expect(result).toBeUndefined()
-  expect(annotator.annotate).toHaveBeenCalledWith('hello')
-  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0]
-  expect(config.text).toBe('<emotion value="excited"/> hello')
-})
+  expect(result).toBeUndefined();
+  expect(annotator.annotate).toHaveBeenCalledWith('hello');
+  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+  expect(config.text).toBe('<emotion value="excited"/> hello');
+});
 
 it('skips annotation when no-annotate is true', async () => {
-  const ttsResult: TtsResult = { audioData, format: 'wav' }
-  const ttsClient = createMockTtsClient(ttsResult)
-  const annotator = createMockAnnotator('should not be called')
+  const ttsResult: TtsResult = { audioData, format: 'wav' };
+  const ttsClient = createMockTtsClient(ttsResult);
+  const annotator = createMockAnnotator('should not be called');
 
-  const result = await runDownload(
-    { text: 'hello', 'voice-id': 'v1', output: 'out.wav', 'no-annotate': true },
-    { CARTESIA_API_KEY: 'key1' },
-    createMockDeps({ ttsClient, annotator }),
-  )
+  const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav', 'no-annotate': true }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
-  expect(result).toBeUndefined()
-  expect(annotator.annotate).not.toHaveBeenCalled()
-  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0]
-  expect(config.text).toBe('hello')
-})
+  expect(result).toBeUndefined();
+  expect(annotator.annotate).not.toHaveBeenCalled();
+  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+  expect(config.text).toBe('hello');
+});
 
 it('returns error when annotation fails', async () => {
-  const annotationError: CartesiaDownloadError = { type: 'AnnotationError', cause: new Error('LLM down') }
-  const annotator = createMockAnnotator(annotationError as unknown as string)
+  const annotationError: CartesiaDownloadError = { type: 'AnnotationError', cause: new Error('LLM down') };
+  const annotator = createMockAnnotator(annotationError as unknown as string);
   // Fix: the mock should return the error object
-  ;(annotator.annotate as ReturnType<typeof vi.fn>).mockResolvedValue(annotationError)
+  (annotator.annotate as ReturnType<typeof vi.fn>).mockResolvedValue(annotationError);
 
-  const result = await runDownload(
-    { text: 'hello', 'voice-id': 'v1', output: 'out.wav' },
-    { CARTESIA_API_KEY: 'key1' },
-    createMockDeps({ annotator }),
-  )
+  const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ annotator }));
 
-  expect(result).toEqual(annotationError)
-})
+  expect(result).toEqual(annotationError);
+});
 
 it('proceeds without annotation when annotator is not provided', async () => {
-  const ttsResult: TtsResult = { audioData, format: 'wav' }
-  const ttsClient = createMockTtsClient(ttsResult)
+  const ttsResult: TtsResult = { audioData, format: 'wav' };
+  const ttsClient = createMockTtsClient(ttsResult);
 
-  const result = await runDownload(
-    { text: 'hello', 'voice-id': 'v1', output: 'out.wav' },
-    { CARTESIA_API_KEY: 'key1' },
-    createMockDeps({ ttsClient }),
-  )
+  const result = await runDownload({ text: 'hello', 'voice-id': 'v1', output: 'out.wav' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient }));
 
-  expect(result).toBeUndefined()
-  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0]
-  expect(config.text).toBe('hello')
-})
+  expect(result).toBeUndefined();
+  const config = (ttsClient.generate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+  expect(config.text).toBe('hello');
+});
 ```
 
 **Step 2: Run tests to verify they fail**
@@ -410,11 +400,11 @@ Changes to `src/commands/download.ts`:
 ```typescript
 // Annotate text if annotator is provided and not skipped
 if (deps.annotator && !args['no-annotate']) {
-  const annotated = await deps.annotator.annotate(config.text)
+  const annotated = await deps.annotator.annotate(config.text);
   if (isError(annotated)) {
-    return annotated
+    return annotated;
   }
-  config = { ...config, text: annotated }
+  config = { ...config, text: annotated };
 }
 ```
 
@@ -436,18 +426,18 @@ provider: {
 6. In the `run` handler, add annotator creation:
 
 ```typescript
-import { createAnnotator } from '../core/annotator.js'
+import { createAnnotator } from '../core/annotator.js';
 
 // In run handler, before calling runDownload:
-const noAnnotate = ctx.values['no-annotate']
-let annotator: TextAnnotator | undefined
+const noAnnotate = ctx.values['no-annotate'];
+let annotator: TextAnnotator | undefined;
 if (!noAnnotate) {
-  const annotatorResult = createAnnotator(ctx.values.provider ?? 'claude')
+  const annotatorResult = createAnnotator(ctx.values.provider ?? 'claude');
   if (isError(annotatorResult)) {
-    console.error(`Error: ${annotatorResult.type}`)
-    process.exit(1)
+    console.error(`Error: ${annotatorResult.type}`);
+    process.exit(1);
   }
-  annotator = annotatorResult
+  annotator = annotatorResult;
 }
 ```
 
@@ -480,11 +470,13 @@ git commit -m "feat: integrate emotion annotation into download command"
 ### Task 6: Update .env.example and docs
 
 **Files:**
+
 - Modify: `.env.example` (if exists, otherwise create)
 
 **Step 1: Add ANTHROPIC_API_KEY to .env.example**
 
 Add:
+
 ```
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```

@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown'
+import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: ['src/cli.ts'],
@@ -10,4 +10,4 @@ export default defineConfig({
   banner: {
     js: '#!/usr/bin/env node',
   },
-})
+});
