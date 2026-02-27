@@ -1,0 +1,7 @@
+{
+  "plugins": ["import", "typescript", "node"],
+  "rules": {
+    "no-console": "off",
+    "no-process-exit": "off"
+  }
+}
