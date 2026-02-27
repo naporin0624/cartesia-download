@@ -3,7 +3,7 @@ import type { VoiceConnection, DiscordGatewayAdapterCreator } from '@discordjs/v
 
 type ConnectionMap = Map<string, VoiceConnection>;
 
-type ConnectionManager = {
+export type ConnectionManager = {
   join: (guildId: string, channelId: string, adapterCreator: DiscordGatewayAdapterCreator) => VoiceConnection;
   leave: (guildId: string) => boolean;
   getConnection: (guildId: string) => VoiceConnection | undefined;
