@@ -3,11 +3,13 @@ import { createClaudeAnnotator } from './claude-annotator.js';
 
 vi.mock('ai', () => ({
   generateText: vi.fn(),
+  streamText: vi.fn(),
 }));
 
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 
 const mockGenerateText = vi.mocked(generateText);
+const mockStreamText = vi.mocked(streamText);
 
 describe('createClaudeAnnotator', () => {
   it('returns SSML-annotated text from Claude', async () => {
@@ -52,5 +54,56 @@ describe('createClaudeAnnotator', () => {
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toBe('元のテキスト');
+  });
+});
+
+describe('createClaudeAnnotator stream', () => {
+  it('returns AsyncIterable of speech chunks parsed by [SEP] markers', async () => {
+    // eslint-disable-next-line func-style -- async generators require function* syntax
+    async function* fakeTextStream() {
+      yield '<emotion value="excited"/> hello[SEP]';
+      yield '<emotion value="sad"/> world';
+    }
+    mockStreamText.mockReturnValue({ textStream: fakeTextStream() } as unknown as ReturnType<typeof streamText>);
+
+    const annotator = createClaudeAnnotator();
+    const result = await annotator.stream('hello world');
+
+    expect(result.isOk()).toBe(true);
+    const chunks: string[] = [];
+    for await (const chunk of result._unsafeUnwrap()) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['<emotion value="excited"/> hello', '<emotion value="sad"/> world']);
+  });
+
+  it('passes system prompt with [SEP] instructions to streamText', async () => {
+    // eslint-disable-next-line func-style -- async generators require function* syntax
+    async function* fakeTextStream() {
+      yield 'annotated text';
+    }
+    mockStreamText.mockReturnValue({ textStream: fakeTextStream() } as unknown as ReturnType<typeof streamText>);
+
+    const annotator = createClaudeAnnotator();
+    await annotator.stream('test');
+
+    expect(mockStreamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: expect.stringContaining('[SEP]'),
+        prompt: 'test',
+      }),
+    );
+  });
+
+  it('returns AnnotationError when streamText throws', async () => {
+    mockStreamText.mockImplementation(() => {
+      throw new Error('API error');
+    });
+
+    const annotator = createClaudeAnnotator();
+    const result = await annotator.stream('test');
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr().type).toBe('AnnotationError');
   });
 });

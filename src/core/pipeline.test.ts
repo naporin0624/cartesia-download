@@ -40,7 +40,7 @@ const createMockAnnotator = (results: (string | AnnotationError)[]): TextAnnotat
       annotate.mockReturnValueOnce(errAsync(result));
     }
   }
-  return { annotate };
+  return { annotate, stream: vi.fn().mockReturnValue(okAsync((async function* () {})())) };
 };
 
 describe('runStreamingPipeline', () => {

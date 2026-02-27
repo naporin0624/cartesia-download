@@ -17,6 +17,7 @@ const createMockTtsClient = (streamOrError?: AsyncIterable<Uint8Array> | TtsErro
 
 const createMockAnnotator = (result: string | AnnotationError): TextAnnotator => ({
   annotate: vi.fn().mockReturnValue(typeof result === 'string' ? okAsync(result) : errAsync(result)),
+  stream: vi.fn().mockReturnValue(okAsync((async function* () {})())),
 });
 
 const createMockIO = (overrides?: Partial<IO>): IO => ({

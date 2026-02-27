@@ -1,7 +1,8 @@
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { ResultAsync } from 'neverthrow';
 import type { TextAnnotator, AnnotationError } from '../types.js';
+import { parseMarkerStream } from '../core/marker-parser.js';
 
 const SYSTEM_PROMPT = `You are a speech emotion annotator for the Cartesia TTS engine.
 
@@ -26,6 +27,11 @@ Example input:
 Example output:
 <emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`;
 
+const STREAM_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
+7. Insert [SEP] between natural speech units (breath pauses, emotion transitions, sentence endings)
+8. Do NOT place [SEP] after the final chunk
+9. Each [SEP]-delimited segment should be a natural, self-contained speech unit`;
+
 type ClaudeAnnotatorOptions = {
   apiKey?: string;
   model?: string;
@@ -44,6 +50,20 @@ export const createClaudeAnnotator = (options?: ClaudeAnnotatorOptions): TextAnn
           prompt: text,
         });
         return annotatedText || text;
+      })(),
+      (cause): AnnotationError => ({ type: 'AnnotationError', cause }),
+    );
+  },
+  stream(text: string): ResultAsync<AsyncIterable<string>, AnnotationError> {
+    return ResultAsync.fromPromise(
+      (async () => {
+        const anthropic = createAnthropic(options?.apiKey ? { apiKey: options.apiKey } : {});
+        const { textStream } = streamText({
+          model: anthropic(options?.model ?? DEFAULT_MODEL),
+          system: STREAM_SYSTEM_PROMPT,
+          prompt: text,
+        });
+        return parseMarkerStream(textStream);
       })(),
       (cause): AnnotationError => ({ type: 'AnnotationError', cause }),
     );
