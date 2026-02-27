@@ -1,14 +1,11 @@
 import type { ResultAsync } from 'neverthrow';
 
-export type AudioFormat = 'wav' | 'mp3';
-
 export interface ResolvedConfig {
   apiKey: string;
   voiceId: string;
   model: string;
   sampleRate: number;
-  format: AudioFormat;
-  outputPath: string;
+  outputPath: string | undefined;
   text: string;
 }
 
@@ -16,7 +13,6 @@ export interface RawCliArgs {
   input?: string;
   text?: string;
   'voice-id'?: string;
-  format?: string;
   output?: string;
   model?: string;
   'sample-rate'?: number;
@@ -31,7 +27,6 @@ export interface RcConfig {
   voiceId?: string;
   model?: string;
   sampleRate?: number;
-  format?: string;
   outputPath?: string;
   provider?: string;
   providerModel?: string;
@@ -39,18 +34,13 @@ export interface RcConfig {
   noAnnotate?: boolean;
 }
 
-export interface TtsResult {
-  audioData: ArrayBuffer;
-  format: AudioFormat;
-}
-
 // --- Module-scoped error types ---
 
-export type ConfigError = { type: 'MissingApiKey' } | { type: 'MissingVoiceId' } | { type: 'MissingText' } | { type: 'MissingOutput' } | { type: 'InvalidFormat'; value: string };
+export type ConfigError = { type: 'MissingApiKey' } | { type: 'MissingVoiceId' } | { type: 'MissingText' };
 
 export type IOError = { type: 'FileReadError'; path: string; cause: unknown } | { type: 'FileWriteError'; path: string; cause: unknown };
 
-export type TtsError = { type: 'TtsApiError'; cause: unknown };
+export type TtsError = { type: 'TtsApiError'; cause: unknown } | { type: 'TtsStreamError'; sentenceIndex: number; cause: unknown };
 
 export type AnnotationError = { type: 'AnnotationError'; cause: unknown } | { type: 'UnsupportedProvider'; provider: string };
 
@@ -60,11 +50,7 @@ export type AppError = ConfigError | IOError | TtsError | AnnotationError;
 // --- Interfaces with module-scoped errors ---
 
 export interface TtsClient {
-  generate(config: ResolvedConfig): ResultAsync<TtsResult, TtsError>;
-}
-
-export interface FileOutput {
-  write(path: string, result: TtsResult): ResultAsync<void, IOError>;
+  generate(config: ResolvedConfig): ResultAsync<AsyncIterable<Uint8Array>, TtsError>;
 }
 
 export type AnnotatorProvider = 'claude';

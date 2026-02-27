@@ -1,50 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { RawCliArgs, RcConfig } from '../types.js';
-import { parseFormat, resolveConfig } from './config.js';
-
-describe('parseFormat', () => {
-  it('returns "wav" for "wav"', () => {
-    const result = parseFormat('wav');
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe('wav');
-  });
-
-  it('returns "mp3" for "mp3"', () => {
-    const result = parseFormat('mp3');
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe('mp3');
-  });
-
-  it('is case-insensitive: "WAV" returns "wav"', () => {
-    const result = parseFormat('WAV');
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe('wav');
-  });
-
-  it('is case-insensitive: "Mp3" returns "mp3"', () => {
-    const result = parseFormat('Mp3');
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe('mp3');
-  });
-
-  it('returns InvalidFormat error for unsupported format', () => {
-    const result = parseFormat('ogg');
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toEqual({ type: 'InvalidFormat', value: 'ogg' });
-  });
-
-  it('returns InvalidFormat error for empty string', () => {
-    const result = parseFormat('');
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toEqual({ type: 'InvalidFormat', value: '' });
-  });
-});
+import { resolveConfig } from './config.js';
 
 describe('resolveConfig', () => {
   const fullArgs: RawCliArgs = {
     text: 'hello world',
     'voice-id': 'voice-from-args',
-    format: 'mp3',
     output: '/tmp/out.mp3',
     model: 'sonic-2',
     'sample-rate': 22050,
@@ -60,7 +21,6 @@ describe('resolveConfig', () => {
     voiceId: 'voice-from-rc',
     model: 'sonic-1',
     sampleRate: 16000,
-    format: 'mp3',
     outputPath: '/tmp/rc-out.mp3',
   };
 
@@ -72,7 +32,6 @@ describe('resolveConfig', () => {
       voiceId: 'voice-from-args',
       model: 'sonic-2',
       sampleRate: 22050,
-      format: 'mp3',
       outputPath: '/tmp/out.mp3',
       text: 'hello world',
     });
@@ -94,7 +53,6 @@ describe('resolveConfig', () => {
       voiceId: 'voice-from-env',
       model: 'sonic-3',
       sampleRate: 44100,
-      format: 'wav',
       outputPath: '/tmp/out.wav',
       text: 'hello',
     });
@@ -110,7 +68,6 @@ describe('resolveConfig', () => {
       voiceId: 'voice-from-rc',
       model: 'sonic-1',
       sampleRate: 16000,
-      format: 'mp3',
     };
     const result = resolveConfig(args, {}, rc);
     expect(result.isOk()).toBe(true);
@@ -119,13 +76,12 @@ describe('resolveConfig', () => {
       voiceId: 'voice-from-rc',
       model: 'sonic-1',
       sampleRate: 16000,
-      format: 'mp3',
       outputPath: '/tmp/out.wav',
       text: 'hello',
     });
   });
 
-  it('uses defaults for model, sampleRate, and format', () => {
+  it('uses defaults for model and sampleRate', () => {
     const args: RawCliArgs = {
       text: 'hello',
       output: '/tmp/out.wav',
@@ -141,7 +97,6 @@ describe('resolveConfig', () => {
       voiceId: 'voice',
       model: 'sonic-3',
       sampleRate: 44100,
-      format: 'wav',
       outputPath: '/tmp/out.wav',
       text: 'hello',
     });
@@ -178,30 +133,6 @@ describe('resolveConfig', () => {
     const result = resolveConfig(args, env, {});
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toEqual({ type: 'MissingText' });
-  });
-
-  it('returns MissingOutput when output is not provided', () => {
-    const args: RawCliArgs = {
-      text: 'hello',
-      'voice-id': 'voice',
-    };
-    const env = { CARTESIA_API_KEY: 'key' };
-    const result = resolveConfig(args, env, {});
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toEqual({ type: 'MissingOutput' });
-  });
-
-  it('returns InvalidFormat when format is invalid', () => {
-    const args: RawCliArgs = {
-      text: 'hello',
-      'voice-id': 'voice',
-      output: '/tmp/out.wav',
-      format: 'ogg',
-    };
-    const env = { CARTESIA_API_KEY: 'key' };
-    const result = resolveConfig(args, env, {});
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toEqual({ type: 'InvalidFormat', value: 'ogg' });
   });
 
   it('CLI args override env vars for voiceId', () => {
@@ -242,5 +173,16 @@ describe('resolveConfig', () => {
     const result = resolveConfig(args, env, rc);
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().outputPath).toBe('/tmp/rc-output.wav');
+  });
+
+  it('resolves successfully without outputPath', () => {
+    const args: RawCliArgs = {
+      text: 'hello',
+      'voice-id': 'voice',
+    };
+    const env = { CARTESIA_API_KEY: 'key' };
+    const result = resolveConfig(args, env, {});
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap().outputPath).toBeUndefined();
   });
 });

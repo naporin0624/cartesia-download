@@ -14,12 +14,8 @@ describe('formatError', () => {
     expect(formatError({ type: 'MissingText' })).toBe('Text is required. Use --text flag or --input to read from a file.');
   });
 
-  it('formats MissingOutput', () => {
-    expect(formatError({ type: 'MissingOutput' })).toBe('Output path is required. Use --output flag.');
-  });
-
-  it('formats InvalidFormat', () => {
-    expect(formatError({ type: 'InvalidFormat', value: 'ogg' })).toBe('Unsupported audio format "ogg". Supported formats: wav, mp3.');
+  it('formats TtsStreamError', () => {
+    expect(formatError({ type: 'TtsStreamError', sentenceIndex: 2, cause: new Error('connection reset') })).toBe('TTS stream failed at sentence 3: connection reset');
   });
 
   it('formats FileReadError', () => {

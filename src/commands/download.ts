@@ -1,22 +1,23 @@
 import path from 'node:path';
 import { define } from 'gunshi';
-import { okAsync, errAsync } from 'neverthrow';
-import type { ResultAsync } from 'neverthrow';
-import type { AppError, FileOutput, IO, RawCliArgs, ResolvedConfig, TextAnnotator, TtsClient } from '../types.js';
+import { okAsync, errAsync, ResultAsync } from 'neverthrow';
+import type { AppError, IO, RawCliArgs, TextAnnotator, TtsClient } from '../types.js';
 import { resolveConfig } from '../core/config.js';
 import { createCartesiaTtsClient, type CartesiaLikeClient } from '../core/tts-client.js';
-import { createFileOutput } from '../core/output.js';
 import { createIO } from '../core/io.js';
 import { CartesiaClient } from '@cartesia/cartesia-js';
 import { createAnnotator } from '../core/annotator.js';
 import { formatError } from '../core/format-error.js';
+import { splitSentences } from '../core/sentence-splitter.js';
+import { runStreamingPipeline } from '../core/pipeline.js';
+import { buildWavHeader } from '../core/wav.js';
 
 type DownloadDeps = {
   io: IO;
   ttsClient?: TtsClient;
-  fileOutput?: FileOutput;
   annotator?: TextAnnotator;
   createTtsClient?: (apiKey: string) => TtsClient;
+  stdout?: NodeJS.WritableStream;
 };
 
 const resolveText = (args: RawCliArgs, io: IO): ResultAsync<RawCliArgs, AppError> => {
@@ -24,22 +25,6 @@ const resolveText = (args: RawCliArgs, io: IO): ResultAsync<RawCliArgs, AppError
     return io.readTextFile(args.input).map((text) => ({ ...args, text }));
   }
   return okAsync(args);
-};
-
-const annotateText = (config: ResolvedConfig, args: RawCliArgs, annotator?: TextAnnotator): ResultAsync<ResolvedConfig, AppError> => {
-  if (annotator && !args['no-annotate']) {
-    return annotator.annotate(config.text).map((annotated) => ({ ...config, text: annotated }));
-  }
-  return okAsync(config);
-};
-
-const writeAnnotationFile = (config: ResolvedConfig, originalText: string, io: IO): ResultAsync<void, AppError> => {
-  if (config.text !== originalText) {
-    const parsed = path.parse(config.outputPath);
-    const txtPath = path.join(parsed.dir, `${parsed.name}.txt`);
-    return io.writeFile(txtPath, config.text);
-  }
-  return okAsync(undefined);
 };
 
 export const runDownload = (args: RawCliArgs, env: Record<string, string | undefined>, deps: DownloadDeps): ResultAsync<void, AppError> =>
@@ -51,24 +36,55 @@ export const runDownload = (args: RawCliArgs, env: Record<string, string | undef
       }),
     )
     .andThen((config) => {
-      const originalText = config.text;
-      return annotateText(config, args, deps.annotator).andThen((annotatedConfig) => writeAnnotationFile(annotatedConfig, originalText, deps.io).map(() => annotatedConfig));
-    })
-    .andThen((config) => {
       const ttsClient = deps.ttsClient ?? deps.createTtsClient!(config.apiKey);
-      const fileOutput = deps.fileOutput ?? createFileOutput();
-      return ttsClient.generate(config).andThen((result) => fileOutput.write(config.outputPath, result));
+      const sentences = splitSentences(config.text);
+      const stdout = deps.stdout ?? process.stdout;
+      const effectiveAnnotator = args['no-annotate'] ? undefined : deps.annotator;
+
+      return ResultAsync.fromPromise(
+        runStreamingPipeline(sentences, config, ttsClient, effectiveAnnotator, (chunk) => {
+          stdout.write(chunk);
+        }),
+        (cause): AppError => ({ type: 'TtsApiError', cause }),
+      ).andThen((pipelineResult) => {
+        if (pipelineResult.isErr()) return errAsync(pipelineResult.error);
+
+        const { chunks, annotatedTexts } = pipelineResult.value;
+        const tasks: ResultAsync<void, AppError>[] = [];
+
+        // Save WAV file if --output specified
+        if (config.outputPath) {
+          const pcmData = Buffer.concat(chunks.map((c) => Buffer.from(c)));
+          const header = buildWavHeader({
+            dataByteLength: pcmData.byteLength,
+            sampleRate: config.sampleRate,
+            numChannels: 1,
+            bitsPerSample: 16,
+          });
+          tasks.push(deps.io.writeFile(config.outputPath, Buffer.concat([header, pcmData])));
+        }
+
+        // Save annotation file if text was annotated
+        const originalText = config.text;
+        const annotatedText = annotatedTexts.join('');
+        if (annotatedText !== originalText && config.outputPath) {
+          const parsed = path.parse(config.outputPath);
+          const txtPath = path.join(parsed.dir, `${parsed.name}.txt`);
+          tasks.push(deps.io.writeFile(txtPath, annotatedText));
+        }
+
+        return tasks.length > 0 ? ResultAsync.combine(tasks).map(() => undefined) : okAsync(undefined);
+      });
     });
 
 export const downloadCommand = define({
   name: 'download',
-  description: 'Generate audio from text using Cartesia TTS API',
+  description: 'Generate audio from text using Cartesia TTS API. Streams raw PCM to stdout.',
   args: {
     input: { type: 'string', short: 'i', description: 'Path to text file' },
     text: { type: 'string', short: 't', description: 'Text to synthesize' },
     'voice-id': { type: 'string', description: 'Cartesia voice ID' },
-    format: { type: 'string', short: 'f', default: 'wav', description: 'Output format (wav or mp3)' },
-    output: { type: 'string', short: 'o', description: 'Output file path' },
+    output: { type: 'string', short: 'o', description: 'Output WAV file path (optional)' },
     model: { type: 'string', short: 'm', default: 'sonic-3', description: 'Model ID' },
     'sample-rate': { type: 'number', default: 44100, description: 'Sample rate' },
     provider: { type: 'string', default: 'claude', description: 'LLM provider for emotion annotation (claude)' },
@@ -77,18 +93,17 @@ export const downloadCommand = define({
     'no-annotate': { type: 'boolean', default: false, description: 'Skip emotion annotation' },
   },
   examples: `
-# Generate WAV from text
+# Stream audio to stdout and save WAV
 $ cartesia-download --text "こんにちは" --voice-id xxx --output hello.wav
 
-# Generate MP3 from file
-$ cartesia-download --input script.txt --voice-id xxx --format mp3 --output hello.mp3
+# Stream raw PCM to audio player
+$ cartesia-download --text "テスト。" --voice-id xxx | aplay -f S16_LE -r 44100 -c 1
 `,
   run: async (ctx) => {
     const args: RawCliArgs = {
       input: ctx.values.input,
       text: ctx.values.text,
       'voice-id': ctx.values['voice-id'],
-      format: ctx.values.format,
       output: ctx.values.output,
       model: ctx.values.model,
       'sample-rate': ctx.values['sample-rate'],
@@ -126,7 +141,7 @@ $ cartesia-download --input script.txt --voice-id xxx --format mp3 --output hell
       },
     }).match(
       () => {
-        console.log('Audio saved successfully');
+        console.error('Done');
       },
       (error) => {
         console.error(formatError(error));

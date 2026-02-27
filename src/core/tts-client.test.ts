@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { buildOutputFormat, createCartesiaTtsClient } from './tts-client.js';
+import { buildRawOutputFormat, createCartesiaTtsClient } from './tts-client.js';
 import type { ResolvedConfig } from '../types.js';
 
 const baseConfig: ResolvedConfig = {
@@ -7,7 +7,6 @@ const baseConfig: ResolvedConfig = {
   voiceId: 'test-voice-id',
   model: 'sonic-3',
   sampleRate: 44100,
-  format: 'wav',
   outputPath: '/tmp/output.wav',
   text: 'Hello, world!',
 };
@@ -17,46 +16,20 @@ async function* createMockAsyncIterable(data: Buffer): AsyncIterable<Uint8Array>
   yield new Uint8Array(data);
 }
 
-describe('buildOutputFormat', () => {
-  it('returns WAV format with pcm_s16le encoding', () => {
-    const result = buildOutputFormat('wav', 44100);
-    expect(result).toEqual({
-      container: 'wav',
-      sampleRate: 44100,
-      encoding: 'pcm_s16le',
-    });
+describe('buildRawOutputFormat', () => {
+  it('returns raw format with pcm_s16le encoding', () => {
+    const result = buildRawOutputFormat(44100);
+    expect(result).toEqual({ container: 'raw', sampleRate: 44100, encoding: 'pcm_s16le' });
   });
 
-  it('returns MP3 format with bitRate 128000', () => {
-    const result = buildOutputFormat('mp3', 44100);
-    expect(result).toEqual({
-      container: 'mp3',
-      sampleRate: 44100,
-      bitRate: 128000,
-    });
-  });
-
-  it('respects different sample rates for WAV', () => {
-    const result = buildOutputFormat('wav', 22050);
-    expect(result).toEqual({
-      container: 'wav',
-      sampleRate: 22050,
-      encoding: 'pcm_s16le',
-    });
-  });
-
-  it('respects different sample rates for MP3', () => {
-    const result = buildOutputFormat('mp3', 22050);
-    expect(result).toEqual({
-      container: 'mp3',
-      sampleRate: 22050,
-      bitRate: 128000,
-    });
+  it('respects different sample rates', () => {
+    const result = buildRawOutputFormat(22050);
+    expect(result).toEqual({ container: 'raw', sampleRate: 22050, encoding: 'pcm_s16le' });
   });
 });
 
 describe('createCartesiaTtsClient', () => {
-  it('calls client.tts.bytes with correct parameters and returns TtsResult', async () => {
+  it('calls client.tts.bytes with correct parameters and returns AsyncIterable', async () => {
     const fakeAudioData = Buffer.from('fake-audio-data');
     const mockClient = {
       tts: {
@@ -74,44 +47,15 @@ describe('createCartesiaTtsClient', () => {
       voice: { mode: 'id', id: 'test-voice-id' },
       language: 'ja',
       outputFormat: {
-        container: 'wav',
+        container: 'raw',
         sampleRate: 44100,
         encoding: 'pcm_s16le',
       },
     });
 
     expect(result.isOk()).toBe(true);
-    const ttsResult = result._unsafeUnwrap();
-    expect(Buffer.from(ttsResult.audioData)).toEqual(fakeAudioData);
-    expect(ttsResult.format).toBe('wav');
-  });
-
-  it('passes MP3 output format when config format is mp3', async () => {
-    const fakeAudioData = Buffer.from('fake-mp3-data');
-    const mockClient = {
-      tts: {
-        bytes: vi.fn().mockResolvedValue(createMockAsyncIterable(fakeAudioData)),
-      },
-    };
-
-    const mp3Config: ResolvedConfig = { ...baseConfig, format: 'mp3', outputPath: '/tmp/output.mp3' };
-    const ttsClient = createCartesiaTtsClient(mockClient);
-    const result = await ttsClient.generate(mp3Config);
-
-    expect(mockClient.tts.bytes).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outputFormat: {
-          container: 'mp3',
-          sampleRate: 44100,
-          bitRate: 128000,
-        },
-      }),
-    );
-
-    expect(result.isOk()).toBe(true);
-    const ttsResult = result._unsafeUnwrap();
-    expect(Buffer.from(ttsResult.audioData)).toEqual(fakeAudioData);
-    expect(ttsResult.format).toBe('mp3');
+    const stream = result._unsafeUnwrap();
+    expect(typeof (stream as AsyncIterable<Uint8Array>)[Symbol.asyncIterator]).toBe('function');
   });
 
   it('returns TtsApiError when client.tts.bytes throws', async () => {
@@ -129,23 +73,5 @@ describe('createCartesiaTtsClient', () => {
     const error = result._unsafeUnwrapErr();
     expect(error.type).toBe('TtsApiError');
     expect((error as { type: 'TtsApiError'; cause: unknown }).cause).toBe(apiError);
-  });
-
-  it('returns TtsApiError when async iteration fails', async () => {
-    // eslint-disable-next-line func-style, require-yield -- async generators require function* syntax
-    async function* brokenIterable(): AsyncIterable<Uint8Array> {
-      throw new Error('Stream read error');
-    }
-    const mockClient = {
-      tts: {
-        bytes: vi.fn().mockResolvedValue(brokenIterable()),
-      },
-    };
-
-    const ttsClient = createCartesiaTtsClient(mockClient);
-    const result = await ttsClient.generate(baseConfig);
-
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr().type).toBe('TtsApiError');
   });
 });
