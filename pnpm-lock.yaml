@@ -7,16 +7,28 @@ settings:
 importers:
 
   .:
+    devDependencies:
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
+      lint-staged:
+        specifier: ^16.2.7
+        version: 16.2.7
+      oxfmt:
+        specifier: ^0.35.0
+        version: 0.35.0
+      oxlint:
+        specifier: ^1.50.0
+        version: 1.50.0
+
+  apps/cli:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.48
-        version: 3.0.48(zod@4.3.6)
+      '@cartesia-download/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@cartesia/cartesia-js':
         specifier: ^2.2.9
         version: 2.2.9
-      ai:
-        specifier: ^6.0.103
-        version: 6.0.103(zod@4.3.6)
       gunshi:
         specifier: ^0.29.2
         version: 0.29.2
@@ -30,24 +42,43 @@ importers:
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260226.1
         version: 7.0.0-dev.20260226.1
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
-      lint-staged:
-        specifier: ^16.2.7
-        version: 16.2.7
-      oxfmt:
-        specifier: ^0.35.0
-        version: 0.35.0
-      oxlint:
-        specifier: ^1.50.0
-        version: 1.50.0
       tsdown:
         specifier: 0.21.0-beta.2
         version: 0.21.0-beta.2(@typescript/native-preview@7.0.0-dev.20260226.1)(typescript@5.9.3)
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.3.2)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/core:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.48
+        version: 3.0.48(zod@4.3.6)
+      '@cartesia/cartesia-js':
+        specifier: ^2.2.9
+        version: 2.2.9
+      ai:
+        specifier: ^6.0.103
+        version: 6.0.103(zod@4.3.6)
+      neverthrow:
+        specifier: ^8.2.0
+        version: 8.2.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.3.2
+        version: 25.3.2
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20260226.1
+        version: 7.0.0-dev.20260226.1
+      tsdown:
+        specifier: 0.21.0-beta.2
+        version: 0.21.0-beta.2(@typescript/native-preview@7.0.0-dev.20260226.1)(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

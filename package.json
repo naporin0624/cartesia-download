@@ -1,42 +1,23 @@
 {
-  "name": "cartesia-download",
+  "name": "cartesia-download-monorepo",
   "version": "1.0.0",
-  "description": "CLI tool to download audio from Cartesia TTS API",
-  "keywords": [],
-  "license": "MIT",
-  "author": "",
-  "bin": {
-    "cartesia-download": "./dist/cli.mjs"
-  },
+  "private": true,
+  "description": "Cartesia TTS monorepo: CLI tool and Discord voice bot",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/cli.ts",
-    "build": "tsdown",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "typecheck": "pnpm -r typecheck",
     "fmt": "oxfmt --write . && oxlint --fix .",
     "lint": "oxlint . && oxfmt --check .",
-    "typecheck": "tsgo --noEmit",
     "prepare": "husky"
   },
-  "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.48",
-    "@cartesia/cartesia-js": "^2.2.9",
-    "ai": "^6.0.103",
-    "gunshi": "^0.29.2",
-    "neverthrow": "^8.2.0"
-  },
   "devDependencies": {
-    "@types/node": "^25.3.2",
-    "@typescript/native-preview": "7.0.0-dev.20260226.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "oxfmt": "^0.35.0",
-    "oxlint": "^1.50.0",
-    "tsdown": "0.21.0-beta.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "oxlint": "^1.50.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": "oxlint"
