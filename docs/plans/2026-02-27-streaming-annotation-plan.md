@@ -13,6 +13,7 @@
 ### Task 1: Add `stream` method to `TextAnnotator` interface
 
 **Files:**
+
 - Modify: `src/types.ts:58-59`
 
 **Step 1: Update interface**
@@ -43,6 +44,7 @@ git commit -m "feat: add stream method to TextAnnotator interface"
 ### Task 2: Create MarkerParser utility
 
 **Files:**
+
 - Create: `src/core/marker-parser.ts`
 - Create: `src/core/marker-parser.test.ts`
 
@@ -181,6 +183,7 @@ git commit -m "feat: add MarkerParser for [SEP] stream splitting"
 ### Task 3: Add `stream` method to Claude annotator
 
 **Files:**
+
 - Modify: `src/providers/claude-annotator.ts`
 - Modify: `src/providers/claude-annotator.test.ts`
 
@@ -318,6 +321,7 @@ git commit -m "feat: add streaming annotation with [SEP] marker parsing"
 ### Task 4: Rewrite pipeline to use streaming annotator
 
 **Files:**
+
 - Modify: `src/core/pipeline.ts`
 - Modify: `src/core/pipeline.test.ts`
 
@@ -336,6 +340,7 @@ export const runStreamingPipeline = async (
 ```
 
 Key changes from old tests:
+
 - First param is `text: string` instead of `sentences: string[]`
 - When annotator has `stream`, pipeline uses `annotator.stream(text)` to get speech chunks
 - When no annotator, sends full text as single TTS request
@@ -360,6 +365,7 @@ const createMockAnnotator = (streamChunks: (string | AnnotationError)[]): TextAn
 ```
 
 Test cases to write:
+
 1. Sends full text as single TTS request when no annotator
 2. Uses annotator.stream to get speech chunks, sends each to TTS
 3. Collects annotated texts from stream chunks
@@ -410,7 +416,9 @@ export const runStreamingPipeline = async (
     speechChunks = streamResult.value;
   } else {
     // eslint-disable-next-line func-style -- async generators require function* syntax
-    async function* singleChunk() { yield text; }
+    async function* singleChunk() {
+      yield text;
+    }
     speechChunks = singleChunk();
   }
 
@@ -448,26 +456,30 @@ git commit -m "refactor: pipeline uses annotator.stream instead of sentence spli
 ### Task 5: Update download command to remove splitSentences
 
 **Files:**
+
 - Modify: `src/commands/download.ts`
 - Modify: `src/commands/download.test.ts`
 
 **Step 1: Update download.ts**
 
 Remove:
+
 - `import { splitSentences } from '../core/sentence-splitter.js';`
 - `const sentences = splitSentences(config.text);`
 
 Change `runStreamingPipeline` call:
+
 - Pass `config.text` instead of `sentences`
 
 The pipeline call becomes:
+
 ```typescript
 return ResultAsync.fromPromise(
   runStreamingPipeline(config.text, config, ttsClient, effectiveAnnotator, (chunk) => {
     stdout.write(chunk);
   }),
   (cause): AppError => ({ type: 'TtsApiError', cause }),
-)
+);
 ```
 
 **Step 2: Update download.test.ts**
@@ -477,12 +489,12 @@ Update `createMockAnnotator` to include `stream` method:
 ```typescript
 const createMockAnnotator = (result: string | AnnotationError): TextAnnotator => {
   // eslint-disable-next-line func-style -- async generators require function* syntax
-  async function* singleChunk(text: string): AsyncIterable<string> { yield text; }
+  async function* singleChunk(text: string): AsyncIterable<string> {
+    yield text;
+  }
   return {
     annotate: vi.fn().mockReturnValue(typeof result === 'string' ? okAsync(result) : errAsync(result)),
-    stream: vi.fn().mockImplementation((text: string) =>
-      typeof result === 'string' ? okAsync(singleChunk(result)) : errAsync(result),
-    ),
+    stream: vi.fn().mockImplementation((text: string) => (typeof result === 'string' ? okAsync(singleChunk(result)) : errAsync(result))),
   };
 };
 ```
@@ -509,6 +521,7 @@ git commit -m "refactor: remove splitSentences from download pipeline"
 ### Task 6: Delete sentence-splitter module
 
 **Files:**
+
 - Delete: `src/core/sentence-splitter.ts`
 - Delete: `src/core/sentence-splitter.test.ts`
 
@@ -546,6 +559,7 @@ npx tsx src/cli.ts --text "わざわざキッチンから醤油持ってきた�
 ```
 
 Verify:
+
 - WAV file created
 - `.txt` annotation file shows SSML tags with `[SEP]` stripped
 - Audio sounds more natural than previous sentence-split approach
@@ -557,6 +571,7 @@ npx tsx src/cli.ts --text "こんにちは、今日はいい天気ですね。" 
 ```
 
 Verify:
+
 - WAV file created with single TTS request
 - No `.txt` file created
 

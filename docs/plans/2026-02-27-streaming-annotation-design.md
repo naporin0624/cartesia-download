@@ -64,12 +64,12 @@ AsyncGenerator that buffers `streamText` text deltas and yields on `[SEP]` detec
 
 ## Pipeline Changes
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Text splitting | `splitSentences` (regex) | Claude `[SEP]` markers / full text if no annotation |
-| Annotation | Per-sentence `generateText` | Full-text `streamText` |
-| TTS requests | Per regex-split sentence | Per Claude-determined speech unit / single request |
-| `splitSentences` | Used | Deleted |
+| Aspect           | Before                      | After                                               |
+| ---------------- | --------------------------- | --------------------------------------------------- |
+| Text splitting   | `splitSentences` (regex)    | Claude `[SEP]` markers / full text if no annotation |
+| Annotation       | Per-sentence `generateText` | Full-text `streamText`                              |
+| TTS requests     | Per regex-split sentence    | Per Claude-determined speech unit / single request  |
+| `splitSentences` | Used                        | Deleted                                             |
 
 ## Files Affected
 
