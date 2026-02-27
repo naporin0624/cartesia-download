@@ -8,7 +8,6 @@ import { createIO } from '../core/io.js';
 import { CartesiaClient } from '@cartesia/cartesia-js';
 import { createAnnotator } from '../core/annotator.js';
 import { formatError } from '../core/format-error.js';
-import { splitSentences } from '../core/sentence-splitter.js';
 import { runStreamingPipeline } from '../core/pipeline.js';
 import { buildWavHeader } from '../core/wav.js';
 
@@ -37,12 +36,11 @@ export const runDownload = (args: RawCliArgs, env: Record<string, string | undef
     )
     .andThen((config) => {
       const ttsClient = deps.ttsClient ?? deps.createTtsClient!(config.apiKey);
-      const sentences = splitSentences(config.text);
       const stdout = deps.stdout ?? process.stdout;
       const effectiveAnnotator = args['no-annotate'] ? undefined : deps.annotator;
 
       return ResultAsync.fromPromise(
-        runStreamingPipeline(sentences, config, ttsClient, effectiveAnnotator, (chunk) => {
+        runStreamingPipeline(config.text, config, ttsClient, effectiveAnnotator, (chunk) => {
           stdout.write(chunk);
         }),
         (cause): AppError => ({ type: 'TtsApiError', cause }),

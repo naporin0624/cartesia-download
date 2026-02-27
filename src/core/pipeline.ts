@@ -1,17 +1,5 @@
-import { ok, err, okAsync, type Result } from 'neverthrow';
+import { ok, err, type Result } from 'neverthrow';
 import type { AppError, ResolvedConfig, TextAnnotator, TtsClient } from '../types.js';
-
-type PreparedSentence = {
-  text: string;
-  stream: AsyncIterable<Uint8Array>;
-};
-
-const prepareSentence = async (sentence: string, config: ResolvedConfig, ttsClient: TtsClient, annotator: TextAnnotator | undefined): Promise<Result<PreparedSentence, AppError>> => {
-  const result = await (annotator ? annotator.annotate(sentence) : okAsync(sentence)).andThen((annotated) =>
-    ttsClient.generate({ ...config, text: annotated }).map((stream): PreparedSentence => ({ text: annotated, stream })),
-  );
-  return result;
-};
 
 const consumeStream = async (stream: AsyncIterable<Uint8Array>, onChunk: (chunk: Uint8Array) => void): Promise<Uint8Array[]> => {
   const chunks: Uint8Array[] = [];
@@ -23,26 +11,40 @@ const consumeStream = async (stream: AsyncIterable<Uint8Array>, onChunk: (chunk:
 };
 
 export const runStreamingPipeline = async (
-  sentences: string[],
+  text: string,
   config: ResolvedConfig,
   ttsClient: TtsClient,
   annotator: TextAnnotator | undefined,
   onChunk: (chunk: Uint8Array) => void,
 ): Promise<Result<{ chunks: Uint8Array[]; annotatedTexts: string[] }, AppError>> => {
-  if (sentences.length === 0) {
+  if (text.trim().length === 0) {
     return ok({ chunks: [], annotatedTexts: [] });
   }
 
   const allChunks: Uint8Array[] = [];
   const annotatedTexts: string[] = [];
 
-  for (const sentence of sentences) {
-    const prepared = await prepareSentence(sentence, config, ttsClient, annotator);
-    if (prepared.isErr()) return err(prepared.error);
+  // Get speech chunks: from annotator stream or full text as single chunk
+  let speechChunks: AsyncIterable<string>;
+  if (annotator) {
+    const streamResult = await annotator.stream(text);
+    if (streamResult.isErr()) return err(streamResult.error);
+    speechChunks = streamResult.value;
+  } else {
+    // eslint-disable-next-line func-style -- async generators require function* syntax
+    async function* singleChunk() {
+      yield text;
+    }
+    speechChunks = singleChunk();
+  }
 
-    annotatedTexts.push(prepared.value.text);
-    const sentenceChunks = await consumeStream(prepared.value.stream, onChunk);
-    allChunks.push(...sentenceChunks);
+  // Process each speech chunk through TTS
+  for await (const speechText of speechChunks) {
+    annotatedTexts.push(speechText);
+    const ttsResult = await ttsClient.generate({ ...config, text: speechText });
+    if (ttsResult.isErr()) return err(ttsResult.error);
+    const chunks = await consumeStream(ttsResult.value, onChunk);
+    allChunks.push(...chunks);
   }
 
   return ok({ chunks: allChunks, annotatedTexts });

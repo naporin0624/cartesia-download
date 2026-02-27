@@ -15,10 +15,23 @@ const createMockTtsClient = (streamOrError?: AsyncIterable<Uint8Array> | TtsErro
   generate: vi.fn().mockReturnValue(streamOrError && 'type' in (streamOrError as TtsError) ? errAsync(streamOrError as TtsError) : okAsync(streamOrError ?? makeStream(new Uint8Array([1, 2, 3])))),
 });
 
-const createMockAnnotator = (result: string | AnnotationError): TextAnnotator => ({
-  annotate: vi.fn().mockReturnValue(typeof result === 'string' ? okAsync(result) : errAsync(result)),
-  stream: vi.fn().mockReturnValue(okAsync((async function* () {})())),
-});
+const createMockAnnotator = (result: string | AnnotationError): TextAnnotator => {
+  if (typeof result !== 'string') {
+    return {
+      annotate: vi.fn().mockReturnValue(errAsync(result)),
+      stream: vi.fn().mockReturnValue(errAsync(result)),
+    };
+  }
+  const annotated = result;
+  // eslint-disable-next-line func-style -- async generators require function* syntax
+  async function* makeStream(): AsyncIterable<string> {
+    yield annotated;
+  }
+  return {
+    annotate: vi.fn().mockReturnValue(okAsync(annotated)),
+    stream: vi.fn().mockReturnValue(okAsync(makeStream())),
+  };
+};
 
 const createMockIO = (overrides?: Partial<IO>): IO => ({
   readTextFile: overrides?.readTextFile ?? vi.fn().mockReturnValue(okAsync('file content')),
@@ -126,7 +139,7 @@ describe('runDownload', () => {
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1' }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
     expect(result.isOk()).toBe(true);
-    expect(annotator.annotate).toHaveBeenCalled();
+    expect(annotator.stream).toHaveBeenCalled();
   });
 
   it('writes annotation txt file when text is annotated and output specified', async () => {
@@ -162,7 +175,7 @@ describe('runDownload', () => {
     const result = await runDownload({ text: 'hello', 'voice-id': 'v1', 'no-annotate': true }, { CARTESIA_API_KEY: 'key1' }, createMockDeps({ ttsClient, annotator }));
 
     expect(result.isOk()).toBe(true);
-    expect(annotator.annotate).not.toHaveBeenCalled();
+    expect(annotator.stream).not.toHaveBeenCalled();
   });
 
   it('returns error when annotation fails', async () => {
