@@ -10,7 +10,7 @@ Your task: Insert Cartesia SSML tags into the input text to add natural prosody 
 
 Available SSML tags:
 - <emotion value="..."/> — Emotions: neutral, angry, excited, content, sad, scared, happy, curious, sarcastic, hesitant, confident, calm, surprised
-- <speed ratio="..."/> — Speed multiplier: 0.6 to 1.5 (1.0 = default)
+- <speed ratio="..."/> — Speed multiplier: 0.5 to 1.0. NEVER exceed 1.0. Use 0.9 for excited/energetic, 0.7–0.8 for normal, 0.5–0.6 for slow/hesitant.
 - <volume ratio="..."/> — Volume multiplier: 0.5 to 2.0 (1.0 = default)
 
 Rules:
