@@ -40,6 +40,15 @@ const cleanup = (): void => {
   }
 };
 
+export const downloadHistoryAtom = atom(null, async (_get, _set, id: string) => {
+  const res = await client.history[':id'].audio.$get({ param: { id } });
+  const data = await res.json();
+  if ('error' in data) return;
+
+  const wavBase64 = (data as { wav: string }).wav;
+  await window.electron.ipcRenderer.invoke('save-wav-dialog', wavBase64);
+});
+
 export const togglePlayAtom = atom(null, async (get, set, id: string) => {
   const currentId = get(playingIdAtom);
 
