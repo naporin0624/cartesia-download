@@ -30,7 +30,8 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies (desktop + core only)
+        run: pnpm install --frozen-lockfile --filter @cartesia-download/desktop...
 
       - name: Build core package
         run: pnpm --filter @cartesia-download/core build
@@ -58,7 +59,6 @@ jobs:
             apps/desktop/dist/*.dmg
             apps/desktop/dist/*.zip
             apps/desktop/dist/*.exe
-            apps/desktop/dist/*.msi
           if-no-files-found: error
 
   release:
