@@ -1,6 +1,6 @@
 # Cartesia Download
 
-Cartesia TTS API を使った音声合成ツール群。CLI と Discord ボイスボットの 2 つのアプリケーションを含む pnpm モノレポ。
+Cartesia TTS API を使った音声合成ツール群。デスクトップアプリ・CLI・Discord ボイスボットの 3 つのアプリケーションを含む pnpm モノレポ。
 
 ## 構成
 
@@ -8,6 +8,7 @@ Cartesia TTS API を使った音声合成ツール群。CLI と Discord ボイ�
 packages/
   core/             @cartesia-download/core — TTS・アノテーション共通ライブラリ
 apps/
+  desktop/          Yomikoe（読み声） — デスクトップアプリ
   cli/              cartesia-download — CLI ツール
   discord-bot/      cartesia-discord-bot — Discord ボイスボット
 ```
@@ -15,6 +16,13 @@ apps/
 ### @cartesia-download/core
 
 Cartesia TTS API クライアント、ストリーミングパイプライン、Claude による感情アノテーション、WAV ヘッダー生成などの共通ロジック。
+
+### Yomikoe（デスクトップアプリ）
+
+テキストから音声を生成する Electron デスクトップアプリ。GUI で声モデルの管理、音声生成、再生・保存ができます。
+感情アノテーション機能を使うと、AI が感情タグを自動付与し、自然で表現力豊かな音声を生成できます。
+
+詳しい使い方は [apps/desktop/README.md](apps/desktop/README.md) を参照してください。
 
 ### cartesia-download（CLI）
 
@@ -136,6 +144,10 @@ pnpm fmt
 - [gunshi](https://github.com/kazupon/gunshi) — CLI フレームワーク
 - [@cartesia/cartesia-js](https://github.com/cartesia-ai/cartesia-js) — Cartesia TTS SDK
 - [Vercel AI SDK](https://sdk.vercel.ai/) + [@ai-sdk/anthropic](https://github.com/vercel/ai) — Claude 感情アノテーション
+- [Electron](https://www.electronjs.org/) + [electron-vite](https://electron-vite.org/) — デスクトップアプリ
+- [React](https://react.dev/) + [Jotai](https://jotai.org/) — UI + 状態管理
+- [Hono](https://hono.dev/) — 型安全 IPC（Electron メイン↔レンダラー）
+- [Tailwind CSS](https://tailwindcss.com/) v4 — スタイリング
 - [discord.js](https://discord.js.org/) + [@discordjs/voice](https://github.com/discordjs/voice) — Discord 連携
 - [Drizzle ORM](https://orm.drizzle.team/) + [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — DB
 
