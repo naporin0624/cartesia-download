@@ -1,5 +1,9 @@
 appId: com.cartesia-download.desktop
 productName: Cartesia TTS
+publish:
+  provider: github
+  owner: naporin0624
+  repo: cartesia-download
 directories:
   buildResources: build
 files:
