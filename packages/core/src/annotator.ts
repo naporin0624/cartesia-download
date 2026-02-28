@@ -5,6 +5,7 @@ import { createClaudeAnnotator } from './providers/claude-annotator';
 type AnnotatorOptions = {
   apiKey?: string;
   model?: string;
+  systemPrompt?: string;
 };
 
 export const createAnnotator = (provider: string, options?: AnnotatorOptions): Result<TextAnnotator, AnnotationError> => {

@@ -1,0 +1,6 @@
+@import url('https://cdn.jsdelivr.net/npm/line-seed-jp@0.0.5/line-seed-jp.css');
+@import 'tailwindcss';
+
+body {
+  font-family: 'LINE Seed JP', sans-serif;
+}
