@@ -26,16 +26,18 @@ Example input:
 やったー！テストに合格した！でも、次の試験が心配だな…
 
 Example output:
-<emotion value="excited"/> <speed ratio="1.2"/> やったー！テストに合格した！ <emotion value="anxious"/> <speed ratio="0.9"/> でも、次の試験が心配だな…`;
+<emotion value="excited"/> <speed ratio="0.9"/> やったー！テストに合格した！ <emotion value="hesitant"/> <speed ratio="0.7"/> でも、次の試験が心配だな…`;
 
-const STREAM_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
-8. Insert [SEP] between natural speech units (breath pauses, emotion transitions, sentence endings)
+const SEP_RULES = `8. Insert [SEP] between natural speech units (breath pauses, emotion transitions, sentence endings)
 9. Do NOT place [SEP] after the final chunk
 10. Each [SEP]-delimited segment should be a natural, self-contained speech unit`;
+
+const STREAM_SYSTEM_PROMPT = `${SYSTEM_PROMPT}\n${SEP_RULES}`;
 
 type ClaudeAnnotatorOptions = {
   apiKey?: string;
   model?: string;
+  systemPrompt?: string;
 };
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
@@ -47,7 +49,7 @@ export const createClaudeAnnotator = (options?: ClaudeAnnotatorOptions): TextAnn
         const anthropic = createAnthropic(options?.apiKey ? { apiKey: options.apiKey } : {});
         const { text: annotatedText } = await generateText({
           model: anthropic(options?.model ?? DEFAULT_MODEL),
-          system: SYSTEM_PROMPT,
+          system: options?.systemPrompt ?? SYSTEM_PROMPT,
           prompt: text,
         });
         return annotatedText || text;
@@ -61,7 +63,7 @@ export const createClaudeAnnotator = (options?: ClaudeAnnotatorOptions): TextAnn
         const anthropic = createAnthropic(options?.apiKey ? { apiKey: options.apiKey } : {});
         const { textStream } = streamText({
           model: anthropic(options?.model ?? DEFAULT_MODEL),
-          system: STREAM_SYSTEM_PROMPT,
+          system: options?.systemPrompt ? `${options.systemPrompt}\n${SEP_RULES}` : STREAM_SYSTEM_PROMPT,
           prompt: text,
         });
         return parseMarkerStream(textStream);

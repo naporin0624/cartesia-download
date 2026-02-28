@@ -34,17 +34,18 @@ describe('createIO', () => {
 
   describe('readRcFile', () => {
     it('returns parsed config from existing file', async () => {
+      mockedFs.access.mockResolvedValueOnce(undefined);
       mockedFs.readFile.mockResolvedValue('{"apiKey":"key","voiceId":"v1"}');
       const io = createIO();
-      const result = await io.readRcFile('/path/.cartesiarc.json');
+      const result = await io.readRcFile('.cartesiarc.json');
       expect(result.isOk()).toBe(true);
       expect(result._unsafeUnwrap()).toEqual({ apiKey: 'key', voiceId: 'v1' });
     });
 
     it('returns empty object when file does not exist', async () => {
-      mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
+      mockedFs.access.mockRejectedValue(new Error('ENOENT'));
       const io = createIO();
-      const result = await io.readRcFile('/missing.json');
+      const result = await io.readRcFile('.missing.json');
       expect(result.isOk()).toBe(true);
       expect(result._unsafeUnwrap()).toEqual({});
     });

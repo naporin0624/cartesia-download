@@ -7,6 +7,9 @@ export default defineConfig({
   target: 'node18',
   outDir: 'dist',
   clean: true,
+  deps: {
+    alwaysBundle: ['@cartesia-download/core'],
+  },
   banner: {
     js: '#!/usr/bin/env node',
   },
