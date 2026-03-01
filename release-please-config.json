@@ -6,7 +6,8 @@
     { "type": "fix", "section": "Bug Fixes" },
     { "type": "perf", "section": "Performance Improvements" },
     { "type": "refactor", "section": "Refactoring" },
-    { "type": "deps", "section": "Dependencies" }
+    { "type": "deps", "section": "Dependencies" },
+    { "type": "chore", "section": "Miscellaneous" }
   ],
   "packages": {
     "apps/desktop": {
