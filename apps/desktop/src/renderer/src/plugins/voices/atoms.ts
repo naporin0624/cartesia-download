@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import { atomFamily } from 'jotai-family';
 import { client } from '@renderer/adapters/client';
 
 export interface VoiceEntry {
@@ -16,59 +17,79 @@ interface VoiceEditForm {
   isPublic: boolean;
 }
 
-export const voicesAtom = atom<VoiceEntry[]>([]);
-export const voicesLoadingAtom = atom(false);
+// --- voices list (async, cached, refreshable) ---
+
+const voicesVersionAtom = atom(0);
+
+export const voicesAtom = atom(async (get) => {
+  get(voicesVersionAtom);
+  const res = await client.voices.$get();
+  if (!res.ok) throw new Error('Failed to fetch voices');
+  return (await res.json()) as VoiceEntry[];
+});
+
+export const refreshVoicesAtom = atom(null, (_get, set) => {
+  set(voicesVersionAtom, (c) => c + 1);
+});
+
+// --- selection ---
+
 export const selectedVoiceIdAtom = atom<string | null>(null);
 export const voicesExpandedAtom = atom(false);
-export const editFormAtom = atom<VoiceEditForm | null>(null);
+
+// --- per-voice edit form (atomFamily: sync, no suspend) ---
+
+const originalFormFamily = atomFamily((_id: string) => atom<VoiceEditForm>({ name: '', description: '', isPublic: false }));
+
+const editFormFamily = atomFamily((_id: string) => atom<VoiceEditForm>({ name: '', description: '', isPublic: false }));
+
+export const selectedOriginalFormAtom = atom((get) => {
+  const id = get(selectedVoiceIdAtom);
+  return id ? get(originalFormFamily(id)) : null;
+});
+
+export const selectedEditFormAtom = atom((get) => {
+  const id = get(selectedVoiceIdAtom);
+  return id ? get(editFormFamily(id)) : null;
+});
 
 export const isDirtyAtom = atom((get) => {
-  const form = get(editFormAtom);
-  const selectedId = get(selectedVoiceIdAtom);
-  const voices = get(voicesAtom);
-  if (!form || !selectedId) return false;
-
-  const original = voices.find((v) => v.id === selectedId);
-  if (!original) return false;
-
+  const id = get(selectedVoiceIdAtom);
+  if (!id) return false;
+  const original = get(originalFormFamily(id));
+  const form = get(editFormFamily(id));
   return form.name !== original.name || form.description !== original.description || form.isPublic !== original.isPublic;
 });
 
-export const fetchVoicesAtom = atom(null, async (_get, set) => {
-  set(voicesLoadingAtom, true);
-  try {
-    const res = await client.voices.$get();
-    if (res.ok) {
-      const data = (await res.json()) as VoiceEntry[];
-      set(voicesAtom, data);
-    }
-  } finally {
-    set(voicesLoadingAtom, false);
-  }
-});
+// --- actions ---
 
-export const selectVoiceAtom = atom(null, (get, set, id: string) => {
+export const selectVoiceAtom = atom(null, async (get, set, id: string) => {
   set(selectedVoiceIdAtom, id);
-  const voices = get(voicesAtom);
+  const voices = await get(voicesAtom);
   const voice = voices.find((v) => v.id === id);
   if (voice) {
-    set(editFormAtom, { name: voice.name, description: voice.description, isPublic: voice.isPublic });
+    const formData: VoiceEditForm = { name: voice.name, description: voice.description, isPublic: voice.isPublic };
+    set(originalFormFamily(id), formData);
+    set(editFormFamily(id), formData);
   }
 });
 
-export const updateEditFormAtom = atom(null, (_get, set, partial: Partial<VoiceEditForm>) => {
-  set(editFormAtom, (prev) => (prev ? { ...prev, ...partial } : null));
+export const updateEditFormAtom = atom(null, (get, set, partial: Partial<VoiceEditForm>) => {
+  const id = get(selectedVoiceIdAtom);
+  if (!id) return;
+  set(editFormFamily(id), (prev) => ({ ...prev, ...partial }));
 });
 
 export const updateVoiceAtom = atom(null, async (get, set) => {
-  const selectedId = get(selectedVoiceIdAtom);
-  const form = get(editFormAtom);
-  if (!selectedId || !form) return;
-
-  set(voicesAtom, (prev) => prev.map((v) => (v.id === selectedId ? { ...v, ...form } : v)));
+  const id = get(selectedVoiceIdAtom);
+  if (!id) return;
+  const form = get(editFormFamily(id));
 
   await client.voices[':id'].$patch({
-    param: { id: selectedId },
+    param: { id },
     json: form,
   });
+
+  set(originalFormFamily(id), form);
+  set(voicesVersionAtom, (c) => c + 1);
 });

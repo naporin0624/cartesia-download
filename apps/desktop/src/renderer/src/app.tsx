@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { Suspense, useState, type FC } from 'react';
 import { TtsPage } from './plugins/tts/page';
 import { SettingsPage } from './plugins/settings/page';
 import { GuidePage } from './plugins/guide/page';
@@ -18,7 +18,11 @@ export const App: FC = () => {
         {currentPage === 'generate' && <TtsPage />}
         {currentPage === 'settings' && <SettingsPage />}
         {currentPage === 'guide' && <GuidePage />}
-        {currentPage === 'voices' && <VoicesPage />}
+        {currentPage === 'voices' && (
+          <Suspense fallback={<p className="text-sm text-neutral-400">読み込み中...</p>}>
+            <VoicesPage />
+          </Suspense>
+        )}
       </main>
     </div>
   );

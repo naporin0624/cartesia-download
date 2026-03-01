@@ -1,7 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, type FC } from 'react';
 import { Button, Checkbox, Input, Label, TextArea, TextField } from 'react-aria-components';
-import { editFormAtom, isDirtyAtom, selectedVoiceIdAtom, updateEditFormAtom, updateVoiceAtom, voicesAtom } from './atoms';
+import { isDirtyAtom, selectedEditFormAtom, selectedOriginalFormAtom, selectedVoiceIdAtom, updateEditFormAtom, updateVoiceAtom } from './atoms';
 
 const inputClass =
   'w-full bg-neutral-100 px-3 py-2 text-sm text-neutral-800 placeholder:text-neutral-400 outline-none focus:bg-white focus:ring-1 focus:ring-sky-300 rounded border border-neutral-200 transition-colors';
@@ -9,13 +9,11 @@ const labelClass = 'block text-[11px] font-medium tracking-wide text-neutral-500
 
 export const VoicesPage: FC = () => {
   const selectedId = useAtomValue(selectedVoiceIdAtom);
-  const voices = useAtomValue(voicesAtom);
-  const form = useAtomValue(editFormAtom);
+  const original = useAtomValue(selectedOriginalFormAtom);
+  const form = useAtomValue(selectedEditFormAtom);
   const dirty = useAtomValue(isDirtyAtom);
   const updateForm = useSetAtom(updateEditFormAtom);
   const updateVoice = useSetAtom(updateVoiceAtom);
-
-  const selectedVoice = selectedId ? voices.find((v) => v.id === selectedId) : undefined;
 
   const handleNameChange = useCallback((v: string) => updateForm({ name: v }), [updateForm]);
   const handleDescriptionChange = useCallback((v: string) => updateForm({ description: v }), [updateForm]);
@@ -34,8 +32,8 @@ export const VoicesPage: FC = () => {
   return (
     <div className="max-w-lg space-y-8">
       <div>
-        <h1 className="text-lg font-medium text-neutral-900">{selectedVoice?.name ?? 'モデル編集'}</h1>
-        {selectedVoice && <p className="text-xs text-neutral-400 mt-1">{selectedVoice.id}</p>}
+        <h1 className="text-lg font-medium text-neutral-900">{original?.name ?? 'モデル編集'}</h1>
+        <p className="text-xs text-neutral-400 mt-1">{selectedId}</p>
       </div>
 
       <section className="space-y-5">
