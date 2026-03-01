@@ -7,6 +7,11 @@ on:
         required: true
         type: string
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to attach assets to (e.g. desktop-v1.3.0)'
+        required: false
+        type: string
 
 permissions:
   contents: write
