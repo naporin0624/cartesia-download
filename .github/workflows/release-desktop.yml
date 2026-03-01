@@ -1,15 +1,16 @@
 name: Release Desktop App
 
 on:
-  push:
-    tags:
-      - 'desktop-v*'
+  release:
+    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: startsWith(github.event.release.tag_name, 'desktop-v') || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         include:
@@ -61,8 +62,9 @@ jobs:
             apps/desktop/dist/*.exe
           if-no-files-found: error
 
-  release:
+  upload-to-release:
     needs: build
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
@@ -72,8 +74,8 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: artifacts/*
-          generate_release_notes: true
