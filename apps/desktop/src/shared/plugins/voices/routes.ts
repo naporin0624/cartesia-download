@@ -13,6 +13,17 @@ export const voicesRoutes = new Hono<HonoEnv>()
   .get('/', async (c) => {
     try {
       const entries = await c.var.services.voices.list();
+
+      const presets = c.var.services.settings.get().presets;
+      const existingVoiceIds = new Set(presets.map((p) => p.voiceId));
+      for (const voice of entries) {
+        if (!existingVoiceIds.has(voice.id)) {
+          const id = crypto.randomUUID();
+          c.var.services.settings.addPreset({ id, name: voice.name, voiceId: voice.id, systemPrompt: '' });
+          c.var.logger.info('[voices:list] auto-added preset', { voiceId: voice.id, name: voice.name });
+        }
+      }
+
       return c.json(entries);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

@@ -1,6 +1,5 @@
 import { atom } from 'jotai';
 import { client } from '@renderer/adapters/client';
-import { settingsAtom } from '@renderer/plugins/settings/atoms';
 
 export interface VoiceEntry {
   id: string;
@@ -35,25 +34,13 @@ export const isDirtyAtom = atom((get) => {
   return form.name !== original.name || form.description !== original.description || form.isPublic !== original.isPublic;
 });
 
-export const fetchVoicesAtom = atom(null, async (get, set) => {
+export const fetchVoicesAtom = atom(null, async (_get, set) => {
   set(voicesLoadingAtom, true);
   try {
     const res = await client.voices.$get();
-    if (!res.ok) return;
-
-    const data = (await res.json()) as VoiceEntry[];
-    set(voicesAtom, data);
-
-    const settings = get(settingsAtom);
-    const existingVoiceIds = new Set(settings.presets.map((p) => p.voiceId));
-    const missing = data.filter((v) => !existingVoiceIds.has(v.id));
-
-    for (const voice of missing) {
-      const addRes = await client.settings.presets.$post({ json: { name: voice.name, voiceId: voice.id, systemPrompt: '' } });
-      if (addRes.ok) {
-        const { id } = (await addRes.json()) as { id: string };
-        set(settingsAtom, (prev) => ({ ...prev, presets: [...prev.presets, { id, name: voice.name, voiceId: voice.id, systemPrompt: '' }] }));
-      }
+    if (res.ok) {
+      const data = (await res.json()) as VoiceEntry[];
+      set(voicesAtom, data);
     }
   } finally {
     set(voicesLoadingAtom, false);
