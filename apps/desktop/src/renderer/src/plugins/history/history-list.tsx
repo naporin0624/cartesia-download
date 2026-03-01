@@ -53,7 +53,11 @@ const HistoryEntry: FC<HistoryEntryProps> = ({ id, text, durationSec, isPlaying,
       </Button>
       <span className="flex-1 text-[13px] text-neutral-700 truncate">{text}</span>
       <span className="text-[11px] text-neutral-400 tabular-nums flex-shrink-0">{formatDuration(durationSec)}</span>
-      <Button onPress={handleDownload} className="w-6 h-6 flex items-center justify-center rounded text-neutral-300 hover:text-sky-500 flex-shrink-0 cursor-pointer transition-colors" aria-label="保存">
+      <Button
+        onPress={handleDownload}
+        className="w-6 h-6 flex items-center justify-center rounded text-neutral-300 hover:text-sky-500 flex-shrink-0 cursor-pointer transition-colors"
+        aria-label="保存"
+      >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M6 1v7M3 6l3 3 3-3M2 11h8" />
         </svg>
@@ -82,7 +86,16 @@ export const HistoryList: FC = () => {
     <Virtualizer layout={ListLayout}>
       <ListBox aria-label="生成履歴" items={history} selectionMode="none" style={listBoxStyle} className="outline-none">
         {(entry) => (
-          <HistoryEntry key={entry.id} id={entry.id} text={entry.text} durationSec={entry.durationSec} isPlaying={playingId === entry.id} onTogglePlay={togglePlay} onDownload={downloadHistory} onDelete={deleteHistory} />
+          <HistoryEntry
+            key={entry.id}
+            id={entry.id}
+            text={entry.text}
+            durationSec={entry.durationSec}
+            isPlaying={playingId === entry.id}
+            onTogglePlay={togglePlay}
+            onDownload={downloadHistory}
+            onDelete={deleteHistory}
+          />
         )}
       </ListBox>
     </Virtualizer>

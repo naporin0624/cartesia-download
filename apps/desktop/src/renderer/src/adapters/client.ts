@@ -11,13 +11,7 @@ const serializeHeaders = (headers?: HeadersInit): [string, string][] => {
 export const client = hc<CallableType>('http://internal.localhost', {
   async fetch(input, init) {
     const url = input.toString();
-    const { data, ...rest } = await window.electron.ipcRenderer.invoke(
-      'hono-rpc-electron',
-      url,
-      init?.method,
-      serializeHeaders(init?.headers),
-      init?.body,
-    );
+    const { data, ...rest } = await window.electron.ipcRenderer.invoke('hono-rpc-electron', url, init?.method, serializeHeaders(init?.headers), init?.body);
     return Response.json(data, rest);
   },
 });

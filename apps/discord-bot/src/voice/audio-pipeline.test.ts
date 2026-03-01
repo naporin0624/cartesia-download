@@ -127,10 +127,7 @@ describe('playAudio', () => {
     fakePlayer._emit('stateChange', { status: 'playing' }, { status: AudioPlayerStatus.Idle });
     await playPromise;
 
-    expect(createAudioResource).toHaveBeenCalledWith(
-      stream,
-      expect.objectContaining({ inputType: StreamType.Arbitrary }),
-    );
+    expect(createAudioResource).toHaveBeenCalledWith(stream, expect.objectContaining({ inputType: StreamType.Arbitrary }));
   });
 
   it('subscribes connection to the player', async () => {

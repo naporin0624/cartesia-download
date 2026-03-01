@@ -13,10 +13,7 @@ export const GuidePage: FC = () => (
   <div className="max-w-2xl space-y-10">
     <div>
       <h1 className="text-lg font-medium text-neutral-900">使い方</h1>
-      <p className="text-sm text-neutral-500 mt-1">
-        Yomikoe はテキストから自然な音声を生成するアプリです。
-        AI による感情アノテーション機能を使うと、より表現力豊かな音声になります。
-      </p>
+      <p className="text-sm text-neutral-500 mt-1">Yomikoe はテキストから自然な音声を生成するアプリです。 AI による感情アノテーション機能を使うと、より表現力豊かな音声になります。</p>
     </div>
 
     {/* はじめに必要なもの */}
@@ -52,7 +49,10 @@ export const GuidePage: FC = () => (
         </div>
         <div className="ml-7 space-y-1.5">
           <p className={bodyClass}>
-            <a href="https://play.cartesia.ai/keys" target="_blank" rel="noopener noreferrer" className={linkClass}>play.cartesia.ai/keys</a> にアクセスし、アカウントを作成してログインします。
+            <a href="https://play.cartesia.ai/keys" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              play.cartesia.ai/keys
+            </a>{' '}
+            にアクセスし、アカウントを作成してログインします。
           </p>
           <p className={bodyClass}>
             「Create API Key」をクリックし、表示されたキー（<span className={codeClass}>sk-...</span> の形式）をコピーします。
@@ -67,9 +67,7 @@ export const GuidePage: FC = () => (
           <p className={headingClass}>設定画面で API Key を入力する</p>
         </div>
         <div className="ml-7">
-          <p className={bodyClass}>
-            左メニューの「設定」を開き、「API キー」セクションにコピーしたキーを貼り付けます。
-          </p>
+          <p className={bodyClass}>左メニューの「設定」を開き、「API キー」セクションにコピーしたキーを貼り付けます。</p>
         </div>
       </div>
 
@@ -80,9 +78,7 @@ export const GuidePage: FC = () => (
           <p className={headingClass}>ボイスモデルを追加する</p>
         </div>
         <div className="ml-7 space-y-2">
-          <p className={bodyClass}>
-            「設定」画面の「ボイスモデル」セクションで「モデルを追加」を押します。
-          </p>
+          <p className={bodyClass}>「設定」画面の「ボイスモデル」セクションで「モデルを追加」を押します。</p>
           <div className={`${cardClass} space-y-2.5`}>
             <div>
               <p className="text-xs font-medium text-neutral-700">モデル名</p>
@@ -91,18 +87,24 @@ export const GuidePage: FC = () => (
             <div>
               <p className="text-xs font-medium text-neutral-700">Voice ID の取得方法</p>
               <ol className="text-xs text-neutral-500 list-decimal list-inside space-y-0.5 mt-0.5">
-                <li><a href="https://play.cartesia.ai/voices" target="_blank" rel="noopener noreferrer" className={linkClass}>play.cartesia.ai/voices</a> で声を検索する</li>
-                <li>使いたい声の右上にある <strong>⋯</strong> をクリック</li>
-                <li>「<strong>Copy ID</strong>」を選択してコピー</li>
+                <li>
+                  <a href="https://play.cartesia.ai/voices" target="_blank" rel="noopener noreferrer" className={linkClass}>
+                    play.cartesia.ai/voices
+                  </a>{' '}
+                  で声を検索する
+                </li>
+                <li>
+                  使いたい声の右上にある <strong>⋯</strong> をクリック
+                </li>
+                <li>
+                  「<strong>Copy ID</strong>」を選択してコピー
+                </li>
                 <li>アプリの Voice ID 欄に貼り付ける</li>
               </ol>
             </div>
             <div>
               <p className="text-xs font-medium text-neutral-700">アノテーション指示（任意）</p>
-              <p className="text-xs text-neutral-500">
-                AI にどんな感情で読んでほしいかを伝える指示文です。
-                空欄ならデフォルトの指示が使われます。
-              </p>
+              <p className="text-xs text-neutral-500">AI にどんな感情で読んでほしいかを伝える指示文です。 空欄ならデフォルトの指示が使われます。</p>
             </div>
           </div>
         </div>
@@ -115,9 +117,7 @@ export const GuidePage: FC = () => (
           <p className={headingClass}>設定を保存する</p>
         </div>
         <div className="ml-7">
-          <p className={bodyClass}>
-            ページ下部の「保存」ボタンを押して完了です。設定はアプリを閉じても保持されます。
-          </p>
+          <p className={bodyClass}>ページ下部の「保存」ボタンを押して完了です。設定はアプリを閉じても保持されます。</p>
         </div>
       </div>
     </section>
@@ -125,9 +125,7 @@ export const GuidePage: FC = () => (
     {/* 音声を生成する */}
     <section className="space-y-4">
       <p className={sectionTitleClass}>音声を生成する</p>
-      <p className={bodyClass}>
-        左メニューの「音声生成」を開きます。
-      </p>
+      <p className={bodyClass}>左メニューの「音声生成」を開きます。</p>
 
       <div className="space-y-2.5">
         <div className="flex items-start gap-2">
@@ -148,17 +146,14 @@ export const GuidePage: FC = () => (
         </div>
       </div>
 
-      <div className={tipClass}>
-        ボイスモデルが未登録の場合は「設定画面でモデルを追加してください」と表示されます。先に設定画面でモデルを追加してください。
-      </div>
+      <div className={tipClass}>ボイスモデルが未登録の場合は「設定画面でモデルを追加してください」と表示されます。先に設定画面でモデルを追加してください。</div>
     </section>
 
     {/* 感情アノテーション */}
     <section className="space-y-4">
       <p className={sectionTitleClass}>感情アノテーション</p>
       <p className={bodyClass}>
-        感情アノテーションを有効にすると、入力テキストを AI（Claude）が分析し、
-        嬉しい・悲しい・驚きなどの感情タグを自動で付けてから音声を生成します。
+        感情アノテーションを有効にすると、入力テキストを AI（Claude）が分析し、 嬉しい・悲しい・驚きなどの感情タグを自動で付けてから音声を生成します。
         棒読みではない、自然で表現力豊かな音声になります。
       </p>
 
@@ -179,25 +174,23 @@ export const GuidePage: FC = () => (
         <ol className={`${bodyClass} list-decimal list-inside space-y-1`}>
           <li>「設定」画面の「感情アノテーション」チェックボックスをオンにする</li>
           <li>
-            表示される「Anthropic API Key」欄にキーを入力する
-            （<a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>console.anthropic.com</a> から取得）
+            表示される「Anthropic API Key」欄にキーを入力する （
+            <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              console.anthropic.com
+            </a>{' '}
+            から取得）
           </li>
           <li>「保存」を押す</li>
         </ol>
       </div>
 
-      <div className={tipClass}>
-        ボイスモデルごとに「アノテーション指示」をカスタマイズすると、
-        同じテキストでもキャラクターに合った読み方にできます。
-      </div>
+      <div className={tipClass}>ボイスモデルごとに「アノテーション指示」をカスタマイズすると、 同じテキストでもキャラクターに合った読み方にできます。</div>
     </section>
 
     {/* 音声出力設定 */}
     <section className="space-y-3">
       <p className={sectionTitleClass}>音声出力の設定</p>
-      <p className={bodyClass}>
-        「設定」画面の「音声出力」セクションで以下を変更できます。
-      </p>
+      <p className={bodyClass}>「設定」画面の「音声出力」セクションで以下を変更できます。</p>
       <div className={cardClass}>
         <table className="w-full text-xs">
           <thead>

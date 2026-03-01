@@ -1,0 +1,1 @@
+<emotion value="angry"/> <speed ratio="0.8"/> ウォーターサーバーの鳴き声デカすぎて鼓膜なくなった。 <emotion value="angry"/> <volume ratio="1.5"/> どうしてくれんの？

@@ -1,0 +1,1 @@
+<emotion value="neutral"/>わざわざキッチンから醤油持ってきたのに<emotion value="surprised"/><speed ratio="1.3"/>って醤油！？え！？しょしょしょ醤油！？<emotion value="surprised"/><speed ratio="1.4"/>え、なんで！？お湯！？お湯割りで飲むのか！？<emotion value="curious"/><speed ratio="1.2"/>流行ってるの！？何！！何これどういうこと！？<emotion value="surprised"/><speed ratio="1.3"/>おれ違う世界きちゃった！？<emotion value="hesitant"/><speed ratio="1.1"/>け、健康に悪いからとりあえずやめな！？な！！

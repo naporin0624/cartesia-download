@@ -13,6 +13,7 @@
 ### Task 1: History Service Interface
 
 **Files:**
+
 - Create: `src/shared/plugins/history/service.d.ts`
 
 **Step 1: Write the service interface**
@@ -47,6 +48,7 @@ git commit -m "feat(history): add HistoryService interface"
 ### Task 2: History Service Implementation (TDD)
 
 **Files:**
+
 - Create: `src/main/plugins/history/service.test.ts`
 - Create: `src/main/plugins/history/service.ts`
 
@@ -80,12 +82,15 @@ describe('createHistoryService', () => {
   it('add persists WAV file and returns HistoryEntry', () => {
     const service = createHistoryService(tempDir);
     const wav = new ArrayBuffer(100);
-    const entry = service.add({
-      text: 'hello',
-      filePath: '',
-      durationSec: 1.5,
-      presetName: 'test-preset',
-    }, wav);
+    const entry = service.add(
+      {
+        text: 'hello',
+        filePath: '',
+        durationSec: 1.5,
+        presetName: 'test-preset',
+      },
+      wav,
+    );
 
     expect(entry.id).toBeTruthy();
     expect(entry.text).toBe('hello');
@@ -208,7 +213,10 @@ export const createHistoryService = (audioDir: string): HistoryService => {
       if (entry && existsSync(entry.filePath)) {
         rmSync(entry.filePath);
       }
-      writeHistory(audioDir, entries.filter((e) => e.id !== id));
+      writeHistory(
+        audioDir,
+        entries.filter((e) => e.id !== id),
+      );
     },
 
     getAudio: (id): ArrayBuffer => {
@@ -239,6 +247,7 @@ git commit -m "feat(history): add HistoryService with file persistence"
 ### Task 3: History Hono Routes
 
 **Files:**
+
 - Create: `src/shared/plugins/history/routes.ts`
 - Modify: `src/shared/callable/index.ts` — add history to Services + route mounting
 
@@ -289,6 +298,7 @@ export const historyRoutes = new Hono<HonoEnv>()
 **Step 2: Register in callable**
 
 Modify `src/shared/callable/index.ts`:
+
 - Add `import type { HistoryService } from '@shared/plugins/history/service';`
 - Add `import { historyRoutes } from '@shared/plugins/history/routes';`
 - Add `history: HistoryService;` to `Services` interface
@@ -297,6 +307,7 @@ Modify `src/shared/callable/index.ts`:
 **Step 3: Register service in main**
 
 Modify `src/main/index.ts`:
+
 - Add `import { createHistoryService } from './plugins/history/service';`
 - Add `const historyService = createHistoryService(join(app.getPath('userData'), 'audio'));` after existing service creation
 - Add `history: historyService` to `services` object in `createApp()`
@@ -313,6 +324,7 @@ git commit -m "feat(history): add Hono routes and wire up service"
 ### Task 4: Modify TTS Generate to Save History
 
 **Files:**
+
 - Modify: `src/shared/plugins/tts/routes.ts`
 
 **Step 1: Update TTS route to save history after generation**
@@ -329,12 +341,15 @@ const durationSec = pcmByteLength / (sampleRate * channels * bytesPerSample);
 // Note: these values come from the options, pcmByteLength from the wav minus header
 
 // Save to history
-const historyEntry = c.var.services.history.add({
-  text,
-  filePath: '',
-  durationSec,
-  presetName: options.presetName,
-}, wavArrayBuffer);
+const historyEntry = c.var.services.history.add(
+  {
+    text,
+    filePath: '',
+    durationSec,
+    presetName: options.presetName,
+  },
+  wavArrayBuffer,
+);
 
 return c.json({ historyEntry });
 ```
@@ -358,6 +373,7 @@ git commit -m "feat(tts): save history entry on generate"
 ### Task 5: History Atoms (Renderer State)
 
 **Files:**
+
 - Create: `src/renderer/src/plugins/history/atoms.ts`
 
 **Step 1: Write atoms**
@@ -380,7 +396,10 @@ export const fetchHistoryAtom = atom(null, async (_get, set) => {
 export const deleteHistoryAtom = atom(null, async (get, set, id: string) => {
   await client.history[':id'].$delete({ param: { id } });
   const current = get(historyAtom);
-  set(historyAtom, current.filter((e) => e.id !== id));
+  set(
+    historyAtom,
+    current.filter((e) => e.id !== id),
+  );
 
   if (get(playingIdAtom) === id) {
     set(playingIdAtom, null);
@@ -449,6 +468,7 @@ git commit -m "feat(history): add Jotai atoms for history state and playback"
 ### Task 6: History List UI Component
 
 **Files:**
+
 - Create: `src/renderer/src/plugins/history/history-list.tsx`
 - Modify: `src/renderer/src/plugins/tts/page.tsx` — replace `<audio>` with HistoryList
 
@@ -496,19 +516,21 @@ export const HistoryList: FC = () => {
                 aria-label={isPlaying ? '停止' : '再生'}
               >
                 {isPlaying ? (
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="2" width="10" height="10" rx="1" /></svg>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <rect x="2" y="2" width="10" height="10" rx="1" />
+                  </svg>
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5v11l9-5.5z" /></svg>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M3 1.5v11l9-5.5z" />
+                  </svg>
                 )}
               </Button>
               <span className="flex-1 text-[13px] text-neutral-300 truncate">{entry.text}</span>
               <span className="text-[11px] text-neutral-500 tabular-nums flex-shrink-0">{formatDuration(entry.durationSec)}</span>
-              <Button
-                onPress={() => deleteHistory(entry.id)}
-                className="w-6 h-6 flex items-center justify-center rounded text-neutral-600 hover:text-red-400 flex-shrink-0"
-                aria-label="削除"
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 2l8 8M10 2l-8 8" /></svg>
+              <Button onPress={() => deleteHistory(entry.id)} className="w-6 h-6 flex items-center justify-center rounded text-neutral-600 hover:text-red-400 flex-shrink-0" aria-label="削除">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M2 2l8 8M10 2l-8 8" />
+                </svg>
               </Button>
             </ListBoxItem>
           );
@@ -522,6 +544,7 @@ export const HistoryList: FC = () => {
 **Step 2: Update TtsPage**
 
 Modify `src/renderer/src/plugins/tts/page.tsx`:
+
 - Remove `<audio controls>` element and save button + annotated text display
 - Remove imports for `audioUrlAtom`, `wavBase64Atom`, `annotatedTextAtom`, `saveWavAtom`
 - Add `import { HistoryList } from '@renderer/plugins/history/history-list';`
@@ -540,6 +563,7 @@ Modify `src/renderer/src/plugins/tts/page.tsx`:
 **Step 3: Update generateAtom**
 
 Modify `src/renderer/src/plugins/tts/atoms.ts`:
+
 - Remove `audioUrlAtom`, `wavBase64Atom`, `annotatedTextAtom`, `saveWavAtom`
 - Import `fetchHistoryAtom` and trigger it after successful generation
 - The generate response now returns `{ historyEntry }` instead of `{ wav, annotatedText }`
@@ -557,6 +581,7 @@ git commit -m "feat(history): add virtualized history list UI and integrate with
 ### Task 7: Callable Types Export
 
 **Files:**
+
 - Modify: `src/shared/callable/types.d.ts` — ensure CallableType reflects the new routes
 
 **Step 1: Verify types.d.ts**

@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, type FC } from 'react';
+import { useCallback, useEffect, type FC, type Key } from 'react';
 import { Button, Label, ListBox, ListBoxItem, Popover, Select, SelectValue, TextArea, TextField } from 'react-aria-components';
 import { fetchSettingsAtom, settingsAtom } from '@renderer/plugins/settings/atoms';
 import { fetchHistoryAtom } from '@renderer/plugins/history/atoms';
@@ -31,6 +31,8 @@ export const TtsPage: FC = () => {
     generate();
   }, [generate]);
 
+  const handlePresetChange = useCallback((key: Key) => setSelectedPresetId(key as string), [setSelectedPresetId]);
+
   const hasModels = settings.presets.length > 0;
   const canGenerate = hasModels && !!selectedPresetId && !!inputText.trim() && !isGenerating;
 
@@ -38,7 +40,7 @@ export const TtsPage: FC = () => {
     <div className="max-w-2xl space-y-6">
       <h1 className="text-lg font-medium text-neutral-900">音声生成</h1>
 
-      <Select selectedKey={selectedPresetId} onSelectionChange={(key) => setSelectedPresetId(key as string)} isDisabled={!hasModels}>
+      <Select selectedKey={selectedPresetId} onSelectionChange={handlePresetChange} isDisabled={!hasModels}>
         <Label className={labelClass}>ボイスモデル</Label>
         <Button className={selectBtnClass}>
           <SelectValue>{hasModels ? undefined : '設定画面でモデルを追加してください'}</SelectValue>

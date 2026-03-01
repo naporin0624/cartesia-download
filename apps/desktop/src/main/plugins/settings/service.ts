@@ -29,11 +29,17 @@ export const createSettingsService = (): SettingsService => {
     },
     updatePreset: (id, partial) => {
       const presets = store.get('presets');
-      store.set('presets', presets.map((p) => (p.id === id ? { ...p, ...partial } : p)));
+      store.set(
+        'presets',
+        presets.map((p) => (p.id === id ? { ...p, ...partial } : p)),
+      );
     },
     deletePreset: (id) => {
       const presets = store.get('presets');
-      store.set('presets', presets.filter((p) => p.id !== id));
+      store.set(
+        'presets',
+        presets.filter((p) => p.id !== id),
+      );
     },
   };
 };

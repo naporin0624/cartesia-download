@@ -6,6 +6,7 @@ import { logger } from './adapters/logger';
 import { createSettingsService } from './plugins/settings/service';
 import { createTtsServiceFactory } from './plugins/tts/service';
 import { createHistoryService } from './plugins/history/service';
+import { createVoicesService } from './plugins/voices/service';
 
 // Global error handlers
 process.on('uncaughtException', (err: Error) => {
@@ -21,9 +22,10 @@ const ttsService = createTtsServiceFactory(() => {
   return { cartesiaApiKey: s.cartesiaApiKey, anthropicApiKey: s.anthropicApiKey };
 }, logger);
 const historyService = createHistoryService(join(app.getPath('userData'), 'audio'));
+const voicesService = createVoicesService(() => settingsService.get().cartesiaApiKey, logger);
 
 const callable = createApp({
-  services: { settings: settingsService, tts: ttsService, history: historyService },
+  services: { settings: settingsService, tts: ttsService, history: historyService, voices: voicesService },
   logger,
 });
 

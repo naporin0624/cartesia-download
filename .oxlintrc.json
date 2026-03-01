@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "import", "unicorn", "promise", "node"],
+  "plugins": ["react", "unicorn", "typescript", "import", "jsx-a11y", "react-perf", "promise"],
   "categories": {},
   "rules": {
     "constructor-super": "warn",
@@ -11,7 +11,7 @@
     "no-class-assign": "warn",
     "no-compare-neg-zero": "warn",
     "no-cond-assign": "warn",
-    "no-console": "allow",
+    "no-console": "deny",
     "no-const-assign": "warn",
     "no-constant-binary-expression": "warn",
     "no-constant-condition": "warn",
@@ -62,10 +62,62 @@
     "valid-typeof": "warn",
     "import/default": "warn",
     "import/namespace": "warn",
+    "jsx_a11y/alt-text": "warn",
+    "jsx_a11y/anchor-has-content": "warn",
+    "jsx_a11y/anchor-is-valid": "warn",
+    "jsx_a11y/aria-activedescendant-has-tabindex": "warn",
+    "jsx_a11y/aria-props": "warn",
+    "jsx_a11y/aria-proptypes": "warn",
+    "jsx_a11y/aria-role": "warn",
+    "jsx_a11y/aria-unsupported-elements": "warn",
+    "jsx_a11y/autocomplete-valid": "warn",
+    "jsx_a11y/click-events-have-key-events": "warn",
+    "jsx_a11y/heading-has-content": "warn",
+    "jsx_a11y/html-has-lang": "warn",
+    "jsx_a11y/iframe-has-title": "warn",
+    "jsx_a11y/img-redundant-alt": "warn",
+    "jsx_a11y/label-has-associated-control": "warn",
+    "jsx_a11y/lang": "warn",
+    "jsx_a11y/media-has-caption": "warn",
+    "jsx_a11y/mouse-events-have-key-events": "warn",
+    "jsx_a11y/no-access-key": "warn",
+    "jsx_a11y/no-aria-hidden-on-focusable": "warn",
+    "jsx_a11y/no-autofocus": "warn",
+    "jsx_a11y/no-distracting-elements": "warn",
+    "jsx_a11y/no-noninteractive-tabindex": "warn",
+    "jsx_a11y/no-redundant-roles": "warn",
+    "jsx_a11y/prefer-tag-over-role": "warn",
+    "jsx_a11y/role-has-required-aria-props": "warn",
+    "jsx_a11y/role-supports-aria-props": "warn",
+    "jsx_a11y/scope": "warn",
+    "jsx_a11y/tabindex-no-positive": "warn",
     "promise/no-callback-in-promise": "warn",
     "promise/no-new-statics": "warn",
     "promise/prefer-await-to-then": "deny",
     "promise/valid-params": "warn",
+    "react/exhaustive-deps": "deny",
+    "react/forbid-dom-props": "deny",
+    "react/forward-ref-uses-ref": "warn",
+    "react/jsx-key": "deny",
+    "react/jsx-no-duplicate-props": "warn",
+    "react/jsx-no-undef": "warn",
+    "react/jsx-no-useless-fragment": "deny",
+    "react/jsx-props-no-spread-multi": "warn",
+    "react/no-array-index-key": "deny",
+    "react/no-children-prop": "warn",
+    "react/no-danger-with-children": "warn",
+    "react/no-did-mount-set-state": "warn",
+    "react/no-direct-mutation-state": "warn",
+    "react/no-find-dom-node": "warn",
+    "react/no-is-mounted": "warn",
+    "react/no-render-return-value": "warn",
+    "react/no-string-refs": "warn",
+    "react/no-unsafe": "warn",
+    "react/rules-of-hooks": "deny",
+    "react/void-dom-elements-no-children": "warn",
+    "react_perf/jsx-no-new-array-as-prop": "deny",
+    "react_perf/jsx-no-new-function-as-prop": "deny",
+    "react_perf/jsx-no-new-object-as-prop": "deny",
     "typescript/array-type": "deny",
     "typescript/await-thenable": "warn",
     "typescript/consistent-type-imports": "deny",
@@ -95,7 +147,14 @@
     "typescript/strict-boolean-expressions": "deny",
     "typescript/triple-slash-reference": "warn",
     "typescript/unbound-method": "warn",
-    "unicorn/filename-case": ["deny", [{ "case": "kebabCase" }]],
+    "unicorn/filename-case": [
+      "deny",
+      [
+        {
+          "case": "kebabCase"
+        }
+      ]
+    ],
     "unicorn/no-await-in-promise-methods": "warn",
     "unicorn/no-empty-file": "warn",
     "unicorn/no-invalid-fetch-options": "warn",
@@ -112,6 +171,19 @@
     "unicorn/prefer-string-starts-ends-with": "warn"
   },
   "settings": {
+    "jsx-a11y": {
+      "polymorphicPropName": null,
+      "components": {},
+      "attributes": {}
+    },
+    "next": {
+      "rootDir": []
+    },
+    "react": {
+      "formComponents": [],
+      "linkComponents": [],
+      "version": null
+    },
     "jsdoc": {
       "ignorePrivate": false,
       "ignoreInternal": false,
@@ -133,13 +205,26 @@
   "overrides": [
     {
       "files": ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+      "env": null,
+      "globals": null,
+      "plugins": null,
       "rules": {
         "no-console": "allow",
         "typescript/consistent-type-imports": "allow",
         "typescript/await-thenable": "allow",
-        "typescript/unbound-method": "allow"
+        "typescript/unbound-method": "allow",
+        "react_perf/jsx-no-new-array-as-prop": "allow",
+        "react_perf/jsx-no-new-function-as-prop": "allow",
+        "react_perf/jsx-no-new-object-as-prop": "allow",
+        "react/exhaustive-deps": "allow"
+      }
+    },
+    {
+      "files": ["apps/cli/**/*.ts", "apps/discord-bot/**/*.ts", "apps/desktop/src/main/**/*.ts", "apps/desktop/src/preload/**/*.ts", "apps/desktop/src/shared/**/*.ts"],
+      "rules": {
+        "no-console": "allow"
       }
     }
   ],
-  "ignorePatterns": ["specs/**/*", "docs/**/*"]
+  "ignorePatterns": ["specs/**/*"]
 }

@@ -42,12 +42,12 @@ Discord のボイスチャンネルに参加してテキストを読み上げる
 
 **スラッシュコマンド:**
 
-| コマンド | 説明 |
-|---|---|
-| `/join` | ユーザーのボイスチャンネルに参加 |
-| `/leave` | ボイスチャンネルから退出 |
-| `/say text:"..."` | テキストを読み上げ（アノテーション + キャッシュ） |
-| `/voice voiceId:"..."` | サーバーの音声設定を変更 |
+| コマンド               | 説明                                              |
+| ---------------------- | ------------------------------------------------- |
+| `/join`                | ユーザーのボイスチャンネルに参加                  |
+| `/leave`               | ボイスチャンネルから退出                          |
+| `/say text:"..."`      | テキストを読み上げ（アノテーション + キャッシュ） |
+| `/voice voiceId:"..."` | サーバーの音声設定を変更                          |
 
 ## セットアップ
 
@@ -67,27 +67,27 @@ pnpm install
 
 **CLI:**
 
-| 変数 | 説明 |
-|---|---|
-| `CARTESIA_API_KEY` | Cartesia TTS API キー（必須） |
-| `CARTESIA_VOICE_ID` | デフォルトの voice ID |
+| 変数                | 説明                                       |
+| ------------------- | ------------------------------------------ |
+| `CARTESIA_API_KEY`  | Cartesia TTS API キー（必須）              |
+| `CARTESIA_VOICE_ID` | デフォルトの voice ID                      |
 | `ANTHROPIC_API_KEY` | Anthropic API キー（感情アノテーション用） |
 
 **Discord ボット:**
 
-| 変数 | 説明 | デフォルト |
-|---|---|---|
-| `DISCORD_TOKEN` | Discord ボットトークン（必須） | — |
-| `CARTESIA_API_KEY` | Cartesia TTS API キー（必須） | — |
-| `DEFAULT_VOICE_ID` | デフォルトの音声 ID（必須） | — |
-| `ANTHROPIC_API_KEY` | Anthropic API キー | — |
-| `DEFAULT_MODEL` | TTS モデル | `sonic-2` |
-| `DEFAULT_SAMPLE_RATE` | サンプルレート | `44100` |
-| `DEFAULT_LANGUAGE` | 言語 | `ja` |
-| `DB_PATH` | SQLite データベースパス | `./data/bot.db` |
-| `CACHE_DIR` | 音声キャッシュディレクトリ | `./data/cache` |
-| `CACHE_MAX_BYTES` | キャッシュ最大サイズ（バイト） | `524288000`（500MB） |
-| `CACHE_MAX_ENTRIES` | キャッシュ最大エントリ数 | `10000` |
+| 変数                  | 説明                           | デフォルト           |
+| --------------------- | ------------------------------ | -------------------- |
+| `DISCORD_TOKEN`       | Discord ボットトークン（必須） | —                    |
+| `CARTESIA_API_KEY`    | Cartesia TTS API キー（必須）  | —                    |
+| `DEFAULT_VOICE_ID`    | デフォルトの音声 ID（必須）    | —                    |
+| `ANTHROPIC_API_KEY`   | Anthropic API キー             | —                    |
+| `DEFAULT_MODEL`       | TTS モデル                     | `sonic-2`            |
+| `DEFAULT_SAMPLE_RATE` | サンプルレート                 | `44100`              |
+| `DEFAULT_LANGUAGE`    | 言語                           | `ja`                 |
+| `DB_PATH`             | SQLite データベースパス        | `./data/bot.db`      |
+| `CACHE_DIR`           | 音声キャッシュディレクトリ     | `./data/cache`       |
+| `CACHE_MAX_BYTES`     | キャッシュ最大サイズ（バイト） | `524288000`（500MB） |
+| `CACHE_MAX_ENTRIES`   | キャッシュ最大エントリ数       | `10000`              |
 
 ### RC ファイル（CLI 用）
 
@@ -106,16 +106,16 @@ pnpm install
 
 ## CLI オプション
 
-| オプション | 短縮 | 型 | デフォルト | 説明 |
-|---|---|---|---|---|
-| `--text` | `-t` | string | — | 合成するテキスト |
-| `--input` | `-i` | string | — | テキストファイルのパス |
-| `--voice-id` | | string | — | Cartesia の voice ID |
-| `--output` | `-o` | string | — | 出力 WAV ファイルパス |
-| `--model` | `-m` | string | `sonic-3` | モデル ID |
-| `--sample-rate` | | number | `44100` | サンプルレート（Hz） |
-| `--provider` | | string | `claude` | アノテーションプロバイダー |
-| `--no-annotate` | | boolean | `false` | 感情アノテーションをスキップ |
+| オプション      | 短縮 | 型      | デフォルト | 説明                         |
+| --------------- | ---- | ------- | ---------- | ---------------------------- |
+| `--text`        | `-t` | string  | —          | 合成するテキスト             |
+| `--input`       | `-i` | string  | —          | テキストファイルのパス       |
+| `--voice-id`    |      | string  | —          | Cartesia の voice ID         |
+| `--output`      | `-o` | string  | —          | 出力 WAV ファイルパス        |
+| `--model`       | `-m` | string  | `sonic-3`  | モデル ID                    |
+| `--sample-rate` |      | number  | `44100`    | サンプルレート（Hz）         |
+| `--provider`    |      | string  | `claude`   | アノテーションプロバイダー   |
+| `--no-annotate` |      | boolean | `false`    | 感情アノテーションをスキップ |
 
 ## 開発
 
@@ -172,12 +172,12 @@ pnpm fmt
 
 ### データベース（SQLite）
 
-| テーブル | 用途 |
-|---|---|
-| `guild_settings` | サーバーごとの音声設定（voiceId, language, model 等） |
-| `utterance_history` | 読み上げ履歴 |
-| `audio_cache` | 音声ファイルキャッシュのメタデータ |
-| `annotation_cache` | アノテーションキャッシュ |
+| テーブル            | 用途                                                  |
+| ------------------- | ----------------------------------------------------- |
+| `guild_settings`    | サーバーごとの音声設定（voiceId, language, model 等） |
+| `utterance_history` | 読み上げ履歴                                          |
+| `audio_cache`       | 音声ファイルキャッシュのメタデータ                    |
+| `annotation_cache`  | アノテーションキャッシュ                              |
 
 ## ライセンス
 

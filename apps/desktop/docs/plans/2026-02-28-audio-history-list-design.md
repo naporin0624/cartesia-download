@@ -8,12 +8,12 @@ Replace the native `<audio controls>` element with a custom audio history list. 
 
 ```typescript
 interface HistoryEntry {
-  id: string;           // crypto.randomUUID()
-  text: string;         // input text
-  filePath: string;     // absolute path to WAV file
-  durationSec: number;  // audio duration in seconds
-  presetName: string;   // preset used for generation
-  createdAt: string;    // ISO 8601
+  id: string; // crypto.randomUUID()
+  text: string; // input text
+  filePath: string; // absolute path to WAV file
+  durationSec: number; // audio duration in seconds
+  presetName: string; // preset used for generation
+  createdAt: string; // ISO 8601
 }
 ```
 
@@ -32,6 +32,7 @@ interface HistoryEntry {
 ### Modified: TTS Generate
 
 `POST /tts/generate` response changes:
+
 - After generating WAV, save file to disk and append to history.json
 - Return `{ historyEntry: HistoryEntry }` instead of `{ wav: base64, annotatedText }`
 - Renderer no longer receives raw WAV data; it fetches audio via file path

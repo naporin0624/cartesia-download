@@ -12,18 +12,19 @@ export const createTtsServiceFactory = (getApiKeys: () => { cartesiaApiKey: stri
     const ttsClient = createCartesiaTtsClient(cartesia);
 
     logger.debug('[tts:service] annotator config', { annotate: options.annotate, hasAnthropicKey: !!anthropicApiKey });
-    const annotator = options.annotate && anthropicApiKey
-      ? createAnnotator('claude', { apiKey: anthropicApiKey, systemPrompt: options.systemPrompt }).match(
-          (a) => {
-            logger.debug('[tts:service] annotator created');
-            return a;
-          },
-          (err) => {
-            logger.warn('[tts:service] annotator creation failed', err);
-            return undefined;
-          },
-        )
-      : undefined;
+    const annotator =
+      options.annotate && anthropicApiKey
+        ? createAnnotator('claude', { apiKey: anthropicApiKey, systemPrompt: options.systemPrompt }).match(
+            (a) => {
+              logger.debug('[tts:service] annotator created');
+              return a;
+            },
+            (err) => {
+              logger.warn('[tts:service] annotator creation failed', err);
+              return undefined;
+            },
+          )
+        : undefined;
 
     const config = {
       apiKey: cartesiaApiKey,
@@ -61,9 +62,7 @@ export const createTtsServiceFactory = (getApiKeys: () => { cartesiaApiKey: stri
     wav.set(new Uint8Array(wavHeader.buffer, wavHeader.byteOffset, wavHeader.byteLength), 0);
     wav.set(pcmData, wavHeader.byteLength);
 
-    const annotatedText = result.value.annotatedTexts.length > 0
-      ? result.value.annotatedTexts.join('\n')
-      : undefined;
+    const annotatedText = result.value.annotatedTexts.length > 0 ? result.value.annotatedTexts.join('\n') : undefined;
 
     logger.info('[tts:service] generation complete', { wavSize: wav.byteLength, hasAnnotation: !!annotatedText });
     return { wav: wav.buffer, annotatedText };

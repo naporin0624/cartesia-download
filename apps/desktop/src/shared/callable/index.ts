@@ -2,9 +2,11 @@ import { Hono } from 'hono';
 import type { SettingsService } from '@shared/plugins/settings/service';
 import type { TtsService } from '@shared/plugins/tts/service';
 import type { HistoryService } from '@shared/plugins/history/service';
+import type { VoicesService } from '@shared/plugins/voices/service';
 import { settingsRoutes } from '@shared/plugins/settings/routes';
 import { ttsRoutes } from '@shared/plugins/tts/routes';
 import { historyRoutes } from '@shared/plugins/history/routes';
+import { voicesRoutes } from '@shared/plugins/voices/routes';
 
 export interface Logger {
   debug(...args: unknown[]): void;
@@ -17,6 +19,7 @@ export interface Services {
   settings: SettingsService;
   tts: TtsService;
   history: HistoryService;
+  voices: VoicesService;
 }
 
 export interface HonoEnv {
@@ -52,6 +55,7 @@ export const createApp = (deps: { services: Services; logger?: Logger }) => {
     .route('/settings', settingsRoutes)
     .route('/tts', ttsRoutes)
     .route('/history', historyRoutes)
+    .route('/voices', voicesRoutes)
     .onError((err, c) => {
       const message = err instanceof Error ? err.message : 'Unknown error';
       const stack = err instanceof Error ? err.stack : undefined;
